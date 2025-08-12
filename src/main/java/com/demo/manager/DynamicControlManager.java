@@ -128,6 +128,12 @@ public class DynamicControlManager {
             for (String tc : tcPlanMap.keySet()) {
                 int targetPlanId = tcPlanMap.get(tc);
 
+                String host = tcInfoRepository.findByTcId(tc).getIp();
+                if (!socketService.isHostConnected(host)) {
+                    //saveDynamicLog, message = socket is not connected
+                    continue;
+                }
+
                 Optional<TCInfo> tcOpt = tcInfoRepository.findById(tc);
                 TCInfo tcData = tcOpt.orElse(null);
                 if (tcData == null || tcData.getEnable().equals(Byte.valueOf("0"))) {
@@ -137,16 +143,22 @@ public class DynamicControlManager {
 
                 int retryCnt = 0;
                 int maxRetry = 3; // maximum retry attempts
+                boolean success = false;
 
-                while (retryCnt < maxRetry) {
+                while (!success && retryCnt < maxRetry) {
                     try {
                         triggerDynamicControl(program_id, tc, targetPlanId);
                         //saveDynamicLog, message = apply dynamic control success
+                        success = true;
                         break;
                     } catch (DynamicException e) {
-                        tryCloseDynamic(tc);
+                        //saveDynamicLog, message = apply dynamic control failed
                     }
                     retryCnt++;
+                }
+
+                if (!success) {
+                    tryCloseDynamic(tc);    // apply dynamic control failed, close it
                 }
 
                 Thread.sleep(500); // avoid too frequent requests
@@ -159,23 +171,17 @@ public class DynamicControlManager {
     private void triggerDynamicControl(String programId, String tcId, int targetPlanId) {
         //saveDynamicLog, message = apply dynamic control for TC
 
-        String host = tcInfoRepository.findByTcId(tcId).getIp();
-
-        if (socketService.isHostConnected(host)) {
-            try {
-                /* Apply a sequence of commands to TC devices to trigger dynamic control */
-                /*
-                send5F10(tcId, 1);                 // enable dynamic control
-                send5F40(tcId, 1);                 // check if dynamic control is enabled
-                send5F15(tcId, targetPlanId);      // set target plan ID and relevant parameters
-                send5F45(tcId, targetPlanId);      // check if target plan ID is set correctly
-                send5F18(tcId, targetPlanId);      // enable target plan ID
-                */
-            } catch (Exception e) {
-                throw new DynamicException(e.getMessage());
-            }
-        } else {
-            //saveDynamicLog, message = socket is not connected
+        try {
+            /* Apply a sequence of commands to TC devices to trigger dynamic control */
+            /*
+            send5F10(tcId, 1);                 // enable dynamic control
+            send5F40(tcId, 1);                 // check if dynamic control is enabled
+            send5F15(tcId, targetPlanId);      // set target plan ID and relevant parameters
+            send5F45(tcId, targetPlanId);      // check if target plan ID is set correctly
+            send5F18(tcId, targetPlanId);      // enable target plan ID
+            */
+        } catch (Exception e) {
+            throw new DynamicException(e.getMessage());
         }
     }
 

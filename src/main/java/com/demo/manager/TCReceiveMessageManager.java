@@ -51,7 +51,7 @@ public class TCReceiveMessageManager {
 
 
         try (BufferedInputStream reader = new java.io.BufferedInputStream(socket.getInputStream())) {
-            while (socket.isConnected()) {
+            while (socketService.isHostConnected(ip)) {
                 int character;
                 while ((character = reader.read()) != -1) {
                     message.add(character);
@@ -147,20 +147,8 @@ public class TCReceiveMessageManager {
                 }
             }
         } catch (IOException e) {
-            log.info("Connection lost: {}", ip);
-
-            if (socket.isClosed() || !socket.isConnected()) {
-
-                try {
-                    socket.close();
-                } catch (IOException e1) {
-                    log.error("Error closing socket for IP: {}", ip, e1);
-                }
-
-                socketService.removeConnection(ip);
-            }
-
             log.error("Error reading from socket: {}", ip, e);
+            socketService.closeConnection(ip);
         }
     }
 

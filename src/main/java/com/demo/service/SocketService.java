@@ -69,26 +69,24 @@ public class SocketService {
     }
 
     public boolean isHostConnected(String ip) {
-        if (socketMap.containsKey(ip)) {
-            Socket socket = getConnection(ip);
-            if (socket != null && socket.isConnected() && !socket.isClosed()) {
-                return true;
-            } else {
-                if (socket != null) {
-                    try {
-                        socket.close();
-                    } catch (IOException e) {
-                        log.warn("Error closing socket {}", ip, e);
-                    }
+        Socket socket = getConnection(ip);
+        if (socket != null && socket.isConnected() && !socket.isClosed()) {
+            return true;
+        } else {
+            if (socket != null) {
+                try {
+                    socket.close();
+                } catch (IOException e) {
+                    log.warn("Error closing socket {}", ip, e);
                 }
-                removeConnection(ip);
             }
+            removeConnection(ip);
         }
 
         return false;
     }
 
-    private void closeConnection(String ip) {
+    public void closeConnection(String ip) {
         Socket socket = getConnection(ip);
         if (socket != null) {
             try {
