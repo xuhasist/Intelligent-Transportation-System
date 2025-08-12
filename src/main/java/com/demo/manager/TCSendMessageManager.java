@@ -1,0 +1,333 @@
+package com.demo.manager;
+
+import com.demo.enums.MessageDefine;
+import com.demo.enums.NakDefine;
+import com.demo.repository.its.TCInfoRepository;
+import com.demo.message.*;
+import com.demo.service.MessageService;
+import com.demo.service.Gen5FMessageService;
+import com.demo.service.MqttClientService;
+import com.demo.service.SocketService;
+import org.json.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.stereotype.Service;
+
+import java.io.BufferedOutputStream;
+import java.io.IOException;
+import java.net.Socket;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
+
+@Service
+public class TCSendMessageManager {
+    private static final Logger log = LoggerFactory.getLogger(TCSendMessageManager.class);
+    private static final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ssZ");
+
+    private final String topic_tc_publish_prefix = "/v3/demo/device/TC/";
+
+    @Autowired
+    private TCInfoRepository tcInfoRepository;
+
+    @Autowired
+    private Gen5FMessageService gen5FMessageService;
+
+    @Autowired
+    @Lazy
+    private MqttClientService mqttClientService;
+
+    @Autowired
+    private MessageService messageService;
+
+    @Autowired
+    private SocketService socketService;
+
+    @Autowired
+    private TCReceiveMessageManager tcReceiveMessageManager;
+
+    @Async
+    public void run(String message) {
+        log.info("TCReceiveMessageManager started for message: {}", message);
+
+        JSONObject obj = new JSONObject(message);
+        String messageId = obj.getString("messageId").toUpperCase();
+        messageService.saveMessageLog(obj, null, null, MessageDefine.mqtt_to_chtit.ordinal());
+
+        if (messageId.equals("5F15")) {
+            handle5F15Message(obj);
+        } else if (messageId.equals("5F40")) {
+            handle5F40Message(obj);
+        }
+
+        // Other commands are handled but not shown
+    }
+
+    public boolean handle5F15Message(JSONObject obj) {
+        String deviceId = obj.getJSONObject("value").getString("deviceId");
+
+        try {
+            Message5F14 msg5F14 = messageService.buildMessage5F14(obj);
+            Message5F15 msg5F15 = messageService.buildMessage5F15(obj);
+
+            String successKey_14 = "0f805f14";
+            String failKey_14 = "0f815f14";
+
+            String successKey_15 = "0f805f15";
+            String failKey_15 = "0f815f15";
+
+            if (sendMessage(deviceId, "5f14", msg5F14, successKey_14, failKey_14)) {
+                return sendMessage(deviceId, "5f15", msg5F15, successKey_15, failKey_15);
+            }
+
+        } catch (Exception e) {
+            log.error("handle5F15Message failed, deviceIds = {} ", deviceId, e);
+        }
+
+        return false;
+    }
+
+    public boolean handle5F40Message(JSONObject obj) {
+        String deviceId = obj.getJSONObject("value").getString("deviceId");
+
+        try {
+            Message5F40 msg5F40 = messageService.buildMessage5F40(obj);
+
+            String successKey = "5fc0";
+            String failKey = "";
+
+            return sendMessage(deviceId, "5f40", msg5F40, successKey, failKey);
+
+        } catch (Exception e) {
+            log.error("handle5F40Message failed, deviceIds = {} ", deviceId, e);
+        }
+
+        return false;
+    }
+
+    void publish5FC0Message(String deviceId, List<Integer> message) {
+        try {
+            ZonedDateTime currentTime = ZonedDateTime.now();
+            String messageTime = currentTime.format(formatter);
+            String topic = topic_tc_publish_prefix + deviceId;
+
+            int ControlStrategy = message.get(9);
+            int EffectTime = message.get(10);
+
+            JSONObject returnData = new JSONObject();
+            returnData.put("messageTime", messageTime);
+
+            JSONObject value = new JSONObject();
+            value.put("deviceId", deviceId);
+            value.put("controlStrategy", ControlStrategy);
+            value.put("effectTime", EffectTime);
+            value.put("status", 1);
+
+            StringBuilder resData = new StringBuilder();
+            for (int i = 7; i < 11; i++) {
+                resData.append(String.format("%2s", Integer.toHexString(message.get(i))).replace(' ', '0'));
+            }
+
+            value.put("resData", resData);
+            returnData.put("messageId", "5FC0");
+
+            returnData.put("value", value);
+
+            boolean success = mqttClientService.publish(1, false, topic, returnData.toString());
+
+            messageService.saveMessageLog(returnData, null, success ? null : "Publish success but return false", MessageDefine.chtit_to_mqtt.ordinal());
+
+        } catch (Exception e) {
+            log.error("Failed to publish 5FC0 message", e);
+        }
+    }
+
+    void publish0F80or0F81Message(String deviceId, List<Integer> message) {
+        try {
+            ZonedDateTime currentTime = ZonedDateTime.now();
+            String messageTime = currentTime.format(formatter);
+            String topic = topic_tc_publish_prefix + deviceId;
+
+            int msg7 = message.get(7);
+            int msg8 = message.get(8);
+
+            String commandId = String.format("%02X%02X", message.get(9), message.get(10));
+            if (commandId.equalsIgnoreCase("5F14")) {
+                commandId = "5F15"; //	change 5F14 to 5F15
+            }
+
+            JSONObject returnData = new JSONObject();
+            returnData.put("messageTime", messageTime);
+
+            JSONObject value = new JSONObject();
+            value.put("deviceId", deviceId);
+            value.put("commandId", commandId);
+            value.put("status", 1);
+
+            if (msg7 == 0x0F && msg8 == 0x80) {
+                StringBuilder resData = new StringBuilder();
+                for (int i = 7; i < 11; i++) {
+                    resData.append(String.format("%2s", Integer.toHexString(message.get(i))).replace(' ', '0'));
+                }
+
+                value.put("resData", resData);
+                returnData.put("messageId", "0F80");
+            } else if (msg7 == 0x0F && msg8 == 0x81) {
+                StringBuilder resData = new StringBuilder();
+                for (int i = 7; i < 13; i++) {
+                    resData.append(String.format("%2s", Integer.toHexString(message.get(i))).replace(' ', '0'));
+                }
+
+                String errorCode = resData.length() >= 10 ? resData.substring(8, 10) : "";
+                String paramNumber = resData.length() >= 12 ? resData.substring(10, 12) : "";
+
+                value.put("errorCode", errorCode);
+                value.put("parameterNumber", paramNumber);
+                value.put("resData", commandId.equals("5F15") ? "0F815F15" : resData);
+
+                returnData.put("messageId", "0F81");
+            }
+
+            returnData.put("value", value);
+
+            boolean success = mqttClientService.publish(1, false, topic, returnData.toString());
+
+            messageService.saveMessageLog(returnData, null, success ? null : "Publish success but return false", MessageDefine.chtit_to_mqtt.ordinal());
+
+        } catch (Exception e) {
+            log.error("Failed to publish 0F80 or 0F81 message", e);
+        }
+    }
+
+    public boolean sendMessage(String deviceId, String command, MessageObject msgobj, String successKey, String failKey) {
+        String ip = tcInfoRepository.findByTcId(deviceId).getIp();
+        try {
+            if (!socketService.isHostConnected(ip)) {
+                log.warn("TC not connected: {}, {}", ip, command);
+                return false;
+            }
+
+            List<Integer> message = genMsg(ip, command, msgobj);
+            if (message == null) {
+                log.warn("genMsg returns null for command: {}", command);
+                return false;
+            }
+
+            Socket socket = socketService.getConnection(ip);
+            return retrySendWithResponse(socket, message, deviceId, command, successKey, failKey);
+
+        } catch (IOException | InterruptedException e) {
+            log.error("Failed to send message: {}, {}", ip, command, e);
+            return false;
+        }
+    }
+
+    private boolean retrySendWithResponse(Socket socket, List<Integer> msg, String deviceId, String command, String successKey, String failKey) throws IOException, InterruptedException {
+        BufferedOutputStream out = new java.io.BufferedOutputStream(socket.getOutputStream());
+        String seq = String.format("%03x", msg.get(2));
+        String nakKey = "aaee".substring(0, 4) + seq;   // nak key is aaee
+
+        int maxRetries = 3;
+        for (int retry = 0; retry < maxRetries; retry++) {
+            sendMessageToSocket(out, msg, deviceId, command);
+
+            // wait for 5 secs
+            List<Integer> response = waitForSpecificResponse(socket, 5000, successKey, failKey, nakKey);
+            if (response != null) {
+                return handleResponse(response, command, deviceId, socket, successKey);
+            }
+
+            log.warn("No response, retry {} for {}:{}", retry + 1, deviceId, command);
+            Thread.sleep(100);
+        }
+
+        return false;
+    }
+
+    private void sendMessageToSocket(BufferedOutputStream out, List<Integer> msg, String deviceId, String command) throws IOException {
+        List<String> msgstr = new ArrayList<>();  // hex string, more readable
+
+        for (Integer b : msg) {
+            out.write(b);
+            msgstr.add(Integer.toHexString(b));
+        }
+        out.flush();
+
+        // save log start
+        JSONObject obj = new JSONObject();
+        JSONObject value = new JSONObject();
+
+        value.put("deviceId", deviceId);
+        value.put("value", "");
+
+        obj.put("value", value);
+        obj.put("messageId", command);
+
+        messageService.saveMessageLog(obj, msgstr.toString(), null, MessageDefine.chtit_to_tc.ordinal());
+        // save log end
+    }
+
+    private boolean handleResponse(List<Integer> response, String command, String deviceId, Socket socket, String successKey) {
+        if (response.get(0) == 170 && response.get(1) == 238) {     // NAK = aa ee
+            String msg = "TC respond NAK: " + NakDefine.getDescriptionByValue(response.get(7));
+            return false;
+        }
+
+        switch (command) {
+            case "5f14" -> {
+                if (response.get(7) == 15 && response.get(8) == 129) {      // 0F81 setting fail
+                    publish0F80or0F81Message(deviceId, response);
+                    tcReceiveMessageManager.getResponseQueue(socket).remove(successKey);
+                    return false;
+                }
+            }
+            case "5f15" -> publish0F80or0F81Message(deviceId, response);
+            case "5f40" -> publish5FC0Message(deviceId, response);
+        }
+
+        // 5f14 has to wait for 5f15
+        if (!command.equals("5f14")) {
+            tcReceiveMessageManager.getResponseQueue(socket).remove(successKey);
+        }
+
+        return true;
+    }
+
+    private List<Integer> waitForSpecificResponse(Socket socket, int timeoutMillis, String successKey, String failKey, String nakKey) throws InterruptedException {
+        long startTime = System.currentTimeMillis();
+        String[] keys = {successKey, failKey, nakKey};
+
+        while (System.currentTimeMillis() - startTime < (long) timeoutMillis) {
+            Map<String, List<Integer>> map = tcReceiveMessageManager.getResponseQueue(socket);
+
+            if (map != null) {
+                for (String key : keys) {
+                    if (map.containsKey(key)) {
+                        return map.get(key);
+                    }
+                }
+            }
+
+            // check again
+            Thread.sleep(100);
+        }
+
+        return null;
+    }
+
+    private List<Integer> genMsg(String host, String command, MessageObject msgobj) {
+        String addr = String.valueOf(tcInfoRepository.findByIp(host).getAddr());
+
+        return switch (command) {
+            case "5f14" -> gen5FMessageService.gen5F14(addr, (Message5F14) msgobj);
+            case "5f15" -> gen5FMessageService.gen5F15(addr, (Message5F15) msgobj);
+            case "5f40" -> gen5FMessageService.gen5F40(addr, (Message5F40) msgobj);
+            case "5f44" -> gen5FMessageService.gen5F44(addr, (Message5F44) msgobj);
+            case "5f45" -> gen5FMessageService.gen5F45(addr, (Message5F45) msgobj);
+            default -> null;
+        };
+    }
+}
