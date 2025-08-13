@@ -2,10 +2,7 @@ package com.demo.service;
 
 import com.demo.enums.ErrorDefine;
 import com.demo.exception.CustomException;
-import com.demo.model.dynamic.DynamicCondition;
-import com.demo.model.dynamic.DynamicLog;
-import com.demo.model.dynamic.DynamicPlanid;
-import com.demo.model.dynamic.DynamicThreshold;
+import com.demo.model.dynamic.*;
 import com.demo.dto.ConditionDto;
 import com.demo.dto.ThresholdDto;
 import com.demo.dto.TrafficPeriodDto;
@@ -49,6 +46,9 @@ public class DynamicService {
 
     @Autowired
     private DynamicLogRepository dynamicLogRepository;
+
+    @Autowired
+    private DynamicParametersRepository dynamicParametersRepository;
 
 
     public List<DynamicCondition> getAllDynamicConditions() {
@@ -95,6 +95,10 @@ public class DynamicService {
         } else {
             throw new CustomException(ErrorDefine.DataNotFound.getDescription(), HttpStatus.NOT_FOUND);
         }
+    }
+
+    public List<DynamicParameters> getEntriesByProgramIdAndDeviceIdAndPlanId(String programId, String deviceId, int planId) {
+        return dynamicParametersRepository.findByIdProgramIdAndIdDeviceIdAndIdPlanId(programId, deviceId, planId);
     }
 
     public void saveDynamicLog(String programId, String tcId, int planId, String status, String message) {

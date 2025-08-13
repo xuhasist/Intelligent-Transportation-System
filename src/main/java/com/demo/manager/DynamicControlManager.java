@@ -3,6 +3,7 @@ package com.demo.manager;
 import com.demo.enums.ControlStrategy;
 import com.demo.enums.DynamicStatus;
 import com.demo.exception.DynamicException;
+import com.demo.model.dynamic.DynamicParameters;
 import com.demo.model.its.TCInfo;
 import com.demo.dto.ConditionDto;
 import com.demo.dto.ThresholdDto;
@@ -14,6 +15,7 @@ import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.expression.Expression;
 import org.springframework.expression.ExpressionParser;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
@@ -30,6 +32,9 @@ public class DynamicControlManager {
     private static final Logger log = LoggerFactory.getLogger(DynamicControlManager.class);
 
     private static final int effectTime = 5;
+
+    @Value("${app.debug:false}")
+    private boolean debugMode;
 
     @Autowired
     private TCReceiveMessageManager tcReceiveMessageManager;
@@ -127,6 +132,10 @@ public class DynamicControlManager {
             } else {
                 condition.setConsecutiveCounts(0);    // reset, not consecutive match
             }
+
+            if (debugMode) {
+                dynamicTrigger(program_id, startTime, endTime, isWeekday);
+            }
         } catch (Exception e) {
             log.error("Error in checkConditionMatch: {}", e.getMessage());
         }
@@ -138,6 +147,10 @@ public class DynamicControlManager {
 
             for (String tc : tcPlanMap.keySet()) {
                 int targetPlanId = tcPlanMap.get(tc);
+
+                if (debugMode) {
+                    tc = "Test2";
+                }
 
                 String host = tcInfoRepository.findByTcId(tc).getIp();
                 if (!socketService.isHostConnected(host)) {
@@ -163,7 +176,7 @@ public class DynamicControlManager {
                         success = true;
                         break;
                     } catch (DynamicException e) {
-                        dynamicService.saveDynamicLog(program_id, tc, targetPlanId, DynamicStatus.FAILURE.getCode(), "apply dynamic control failed" + e.getMessage());
+                        dynamicService.saveDynamicLog(program_id, tc, targetPlanId, DynamicStatus.FAILURE.getCode(), "apply dynamic control failed: " + e.getMessage());
                     }
                     retryCnt++;
                 }
@@ -190,8 +203,16 @@ public class DynamicControlManager {
         try {
             /* Apply a sequence of commands to TC devices to trigger dynamic control */
             send5F10(tcId, ControlStrategy.Dynamic.getCode());  // enable dynamic control
+            send5F40(tcId, ControlStrategy.Dynamic.getCode());  // check if dynamic control is set correctly
+
+            List<DynamicParameters> data = dynamicService.getEntriesByProgramIdAndDeviceIdAndPlanId(programId, tcId, targetPlanId);
+            if (data.isEmpty()) {
+                throw new DynamicException("Dynamic parameters not found for programId: " + programId + ", tcId: " + tcId + ", targetPlanId: " + targetPlanId);
+            }
+
+            targetPlanId = 0;   // dynamic control can only be applied to plan ID 0
+
             /*
-            send5F40(tcId, 1);                 // check if dynamic control is enabled
             send5F15(tcId, targetPlanId);      // set target plan ID and relevant parameters
             send5F45(tcId, targetPlanId);      // check if target plan ID is set correctly
             send5F18(tcId, targetPlanId);      // enable target plan ID
@@ -206,17 +227,41 @@ public class DynamicControlManager {
     }
 
     private void send5F10(String deviceId, int controlStrategy) {
-        JSONObject obj = new JSONObject();
-        obj.put("messageNumber", -1);
-
         JSONObject value = new JSONObject();
         value.put("deviceId", deviceId);
         value.put("controlStrategy", controlStrategy);
         value.put("effectTime", effectTime);
 
+        JSONObject obj = new JSONObject();
         obj.put("value", value);
         if (!tcSendMessageManager.handle5F10Message(obj)) {
             throw new DynamicException("5F10 dynamic control setting failed");
+        }
+    }
+
+    private void send5F40(String deviceId, int controlStrategy) {
+        JSONObject value = new JSONObject();
+        value.put("deviceId", deviceId);
+
+        JSONObject obj = new JSONObject();
+        obj.put("value", value);
+
+        if (!tcSendMessageManager.handle5F40Message(obj)) {
+            throw new DynamicException("5F40 dynamic control check failed");
+        } else {
+            // check 5FC0
+            long startTime = System.currentTimeMillis();
+            JSONObject value5FC0;
+            do {
+                value5FC0 = tcReceiveMessageManager.getValueMap5FC0().get(deviceId);
+            } while (value5FC0 == null && (System.currentTimeMillis() - startTime < 16000));    // wait for 16 seconds
+
+            if (value5FC0 == null) {
+                throw new DynamicException("5FC0 null failed");
+            } else if (value5FC0.getInt("ControlStrategy") != controlStrategy || value5FC0.getInt("EffectTime") != effectTime) {
+                throw new DynamicException("5FC0 parameter mismatch failed");
+            }
+            tcReceiveMessageManager.getValueMap5FC0().remove(deviceId);
         }
     }
 }

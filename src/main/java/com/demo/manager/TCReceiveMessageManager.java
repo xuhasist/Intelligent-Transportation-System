@@ -6,6 +6,7 @@ import com.demo.handler.MsgHandler;
 import com.demo.repository.its.TCInfoRepository;
 import com.demo.service.MessageService;
 import com.demo.service.SocketService;
+import lombok.Getter;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,6 +26,13 @@ import java.util.concurrent.ConcurrentHashMap;
 public class TCReceiveMessageManager {
     private static final Logger log = LoggerFactory.getLogger(TCReceiveMessageManager.class);
     private final Map<Socket, Map<String, List<Integer>>> responseQueues = new ConcurrentHashMap<>();
+
+    @Getter
+    private final Map<String, JSONObject> valueMap5FC0 = new ConcurrentHashMap<>();
+    @Getter
+    private final Map<String, JSONObject> valueMap5FC4 = new ConcurrentHashMap<>();
+    @Getter
+    private final Map<String, JSONObject> valueMap5FC5 = new ConcurrentHashMap<>();
 
     @Autowired
     private TCInfoRepository tcInfoRepository;
@@ -107,6 +115,10 @@ public class TCReceiveMessageManager {
                                 if (message.get(7).equals(0x5f)) {
                                     String key = generateKey(message, 7, 8);
                                     saveToQueue(socket, key, message);
+
+                                    if (message.get(8).equals(0xc0)) {
+                                        handle5FC0Message(deviceId, new ArrayList<>(message), new ArrayList<>(msgstr));
+                                    }
                                 } else if (message.get(7).equals(0x0f)) {
                                     if (message.get(8).equals(0x80) || message.get(8).equals(0x81)) {
                                         String key = generateKey(message, 7, 8, 9, 10);
@@ -219,5 +231,31 @@ public class TCReceiveMessageManager {
         } catch (Exception e) {
             log.error("Failed to send {} message", messageId, e);
         }
+    }
+
+    void handle5FC0Message(String deviceId, List<Integer> message5fc0, List<String> msgstr5fc0) {
+        try {
+            int controlStrategy = message5fc0.get(9);
+            int effectTime = message5fc0.get(10);
+
+            JSONObject value = new JSONObject();
+            value.put("ControlStrategy", controlStrategy);
+            value.put("EffectTime", effectTime);
+            //value.put("ControlStrategyBitMap", toBitMap(controlStrategy));
+            //value.put("EffectTimeBitMap", toBitMap(effectTime));
+
+            valueMap5FC0.put(deviceId, value);
+
+        } catch (Exception e) {
+            log.error("Error handling 5FC0 message for device {}: {}", deviceId, e.getMessage(), e);
+        }
+    }
+
+    private String toHex(int value) {
+        return String.format("%02X", value);    // format as two-digit hexadecimal, uppercase
+    }
+
+    private String toBitMap(int value) {
+        return String.format("%8s", Integer.toBinaryString(value)).replace(' ', '0');
     }
 }
