@@ -17,6 +17,28 @@ public class Gen5FMessageService {
     @Autowired
     private MsgHandler msgHandler;
 
+    public List<Integer> gen5F10(String addr, Message5F10 msgobj) {
+        List<Integer> msg = new ArrayList<>();
+        msg.add(MsgHandler.DLE);
+        msg.add(MsgHandler.STX);
+        msg.add(MsgHandler.getSEQ());
+        msg.add(Integer.parseInt(addr) >> 8);
+        msg.add(Integer.parseInt(addr) % 256);
+        msg.add(0);
+        msg.add(14);
+        msg.add(0x5F);
+        msg.add(0x10);
+        msg.add(msgobj.getControlStrategy());
+        msg.add(msgobj.getEffecTime());
+        msg.add(MsgHandler.DLE);
+        msg.add(MsgHandler.ETX);
+        msg.add(msgHandler.genCKS(msg));
+
+        msg = msgHandler.sendNormalize(msg);
+
+        return msg;
+    }
+
     public List<Integer> gen5F14(String addr, Message5F14 msgobj) {
         int subphasecount = msgobj.getSubPhaseCount();
         int msglength = 14 + (subphasecount * 7);

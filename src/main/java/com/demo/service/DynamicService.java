@@ -3,15 +3,13 @@ package com.demo.service;
 import com.demo.enums.ErrorDefine;
 import com.demo.exception.CustomException;
 import com.demo.model.dynamic.DynamicCondition;
+import com.demo.model.dynamic.DynamicLog;
 import com.demo.model.dynamic.DynamicPlanid;
 import com.demo.model.dynamic.DynamicThreshold;
 import com.demo.dto.ConditionDto;
 import com.demo.dto.ThresholdDto;
 import com.demo.dto.TrafficPeriodDto;
-import com.demo.repository.dynamic.CctvCarflowByPositionRepository;
-import com.demo.repository.dynamic.DynamicConditionRepository;
-import com.demo.repository.dynamic.DynamicPlanidRepository;
-import com.demo.repository.dynamic.DynamicThresholdRepository;
+import com.demo.repository.dynamic.*;
 import lombok.Getter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -48,6 +46,9 @@ public class DynamicService {
 
     @Autowired
     private DynamicPlanidRepository dynamicPlanidRepository;
+
+    @Autowired
+    private DynamicLogRepository dynamicLogRepository;
 
 
     public List<DynamicCondition> getAllDynamicConditions() {
@@ -94,6 +95,17 @@ public class DynamicService {
         } else {
             throw new CustomException(ErrorDefine.DataNotFound.getDescription(), HttpStatus.NOT_FOUND);
         }
+    }
+
+    public void saveDynamicLog(String programId, String tcId, int planId, String status, String message) {
+        DynamicLog log = DynamicLog.builder()
+                .programId(programId)
+                .tcId(tcId)
+                .planId(planId)
+                .status(status)
+                .message(message)
+                .build();
+        dynamicLogRepository.save(log);
     }
 
     public void createConditionMap(List<DynamicCondition> conditions) {

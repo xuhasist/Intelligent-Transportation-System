@@ -20,6 +20,18 @@ public class MessageService {
     @Autowired
     private TCMessageLogRepository tcMessageLogRepository;
 
+    public Message5F10 buildMessage5F10(JSONObject obj) {
+        JSONObject value = obj.getJSONObject("value");
+
+        int controlStrategy = value.getInt("controlStrategy");
+        int effectTime = value.getInt("effectTime");
+
+        return Message5F10.builder()
+                .controlStrategy(controlStrategy)
+                .effecTime(effectTime)
+                .build();
+    }
+
     public Message5F14 buildMessage5F14(JSONObject obj) {
         JSONObject value = obj.getJSONObject("value");
 
@@ -76,7 +88,6 @@ public class MessageService {
     }
 
     public Message5F40 buildMessage5F40(JSONObject obj) {
-
         return Message5F40.builder().build();
     }
 

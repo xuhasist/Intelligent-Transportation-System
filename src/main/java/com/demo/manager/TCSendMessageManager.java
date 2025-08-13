@@ -57,13 +57,33 @@ public class TCSendMessageManager {
         String messageId = obj.getString("messageId").toUpperCase();
         messageService.saveMessageLog(obj, null, null, MessageDefine.mqtt_to_chtit.ordinal());
 
-        if (messageId.equals("5F15")) {
+        if (messageId.equals("5F10")) {
+            handle5F10Message(obj);
+        } else if (messageId.equals("5F15")) {
             handle5F15Message(obj);
         } else if (messageId.equals("5F40")) {
             handle5F40Message(obj);
         }
 
         // Other commands are handled but not shown
+    }
+
+    public boolean handle5F10Message(JSONObject obj) {
+        String deviceId = obj.getJSONObject("value").getString("deviceId");
+
+        try {
+            Message5F10 msg5F10 = messageService.buildMessage5F10(obj);
+
+            String successKey = "0f805f10";
+            String failKey = "0f815f10";
+
+            return sendMessage(deviceId, "5f10", msg5F10, successKey, failKey);
+
+        } catch (Exception e) {
+            log.error("handle5F10Message failed, deviceIds = {} ", deviceId, e);
+        }
+
+        return false;
     }
 
     public boolean handle5F15Message(JSONObject obj) {
@@ -284,7 +304,7 @@ public class TCSendMessageManager {
                     return false;
                 }
             }
-            case "5f15" -> publish0F80or0F81Message(deviceId, response);
+            case "5f15", "5f10" -> publish0F80or0F81Message(deviceId, response);
             case "5f40" -> publish5FC0Message(deviceId, response);
         }
 
@@ -322,6 +342,7 @@ public class TCSendMessageManager {
         String addr = String.valueOf(tcInfoRepository.findByIp(host).getAddr());
 
         return switch (command) {
+            case "5f10" -> gen5FMessageService.gen5F10(addr, (Message5F10) msgobj);
             case "5f14" -> gen5FMessageService.gen5F14(addr, (Message5F14) msgobj);
             case "5f15" -> gen5FMessageService.gen5F15(addr, (Message5F15) msgobj);
             case "5f40" -> gen5FMessageService.gen5F40(addr, (Message5F40) msgobj);
