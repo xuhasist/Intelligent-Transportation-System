@@ -91,6 +91,26 @@ public class MessageService {
         return Message5F40.builder().build();
     }
 
+    public Message5F44 buildMessage5F44(JSONObject obj) {
+        JSONObject value = obj.getJSONObject("value");
+
+        int planId = value.getInt("planId");
+
+        return Message5F44.builder()
+                .planId(planId)
+                .build();
+    }
+
+    public Message5F45 buildMessage5F45(JSONObject obj) {
+        JSONObject value = obj.getJSONObject("value");
+
+        int planId = value.getInt("planId");
+
+        return Message5F45.builder()
+                .planId(planId)
+                .build();
+    }
+
     public TCMessageLog saveMessageLog(JSONObject obj, String rawValue, String returnResult, int noteCode) {
         String deviceId = obj.getJSONObject("value").getString("deviceId");
         String messageId = obj.getString("messageId").toUpperCase();

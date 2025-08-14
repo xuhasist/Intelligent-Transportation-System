@@ -21,10 +21,13 @@ import java.io.IOException;
 import java.net.Socket;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 @Service
 public class TCReceiveMessageManager {
     private static final Logger log = LoggerFactory.getLogger(TCReceiveMessageManager.class);
+
+    @Getter
     private final Map<Socket, Map<String, List<Integer>>> responseQueues = new ConcurrentHashMap<>();
 
     @Getter
@@ -86,10 +89,9 @@ public class TCReceiveMessageManager {
                         if (message.get(1).equals(MsgHandler.NAK)) {
                             String key = Integer.toHexString(message.get(0)) + Integer.toHexString(message.get(1));
                             key = key + String.format("%03x", message.get(2));
-                            List<Integer> copyOfMessage = new ArrayList<>(message);  // Create a duplicate
 
-                            responseQueues.putIfAbsent(socket, new ConcurrentHashMap<>());
-                            responseQueues.get(socket).put(key, copyOfMessage);
+                            List<Integer> copyOfMessage = new ArrayList<>(message);
+                            saveToQueue(socket, key, copyOfMessage);
 
                             log.info("Received NAK from TC {}: {}", deviceId, msgstr);
 
@@ -113,16 +115,38 @@ public class TCReceiveMessageManager {
                                 message = msgHandler.recvNormalize(message);
 
                                 if (message.get(7).equals(0x5f)) {
-                                    String key = generateKey(message, 7, 8);
-                                    saveToQueue(socket, key, message);
+                                    int value = message.get(8);
+                                    if (value == 0x03 || value == 0x08 || value == 0x0A ||
+                                            value == 0x0B || value == 0x00 || value == 0x0C) {
+                                        // do nothing
+                                    } else {
 
-                                    if (message.get(8).equals(0xc0)) {
-                                        handle5FC0Message(deviceId, new ArrayList<>(message), new ArrayList<>(msgstr));
+                                        String key = generateKey(message, 7, 8);
+
+                                        if (value == 0xc4 || value == 0xc5) {
+                                            int planId = message.get(9);
+                                            key = key + String.format("%02d", planId);
+                                        }
+
+                                        List<Integer> copyOfMessage = new ArrayList<>(message);
+                                        saveToQueue(socket, key, copyOfMessage);
+
+                                        if (value == 0xc5)
+                                            combine5FC45FC5Messages(socket, key, copyOfMessage);
+
+                                        if (value == 0xc0) {
+                                            handle5FC0Message(deviceId, new ArrayList<>(message), new ArrayList<>(msgstr));
+                                        } else if (value == 0xc4) {
+                                            handle5FC4Message(deviceId, new ArrayList<>(message), new ArrayList<>(msgstr));
+                                        } else if (value == 0xc5) {
+                                            handle5FC5Message(deviceId, new ArrayList<>(message), new ArrayList<>(msgstr));
+                                        }
                                     }
                                 } else if (message.get(7).equals(0x0f)) {
                                     if (message.get(8).equals(0x80) || message.get(8).equals(0x81)) {
                                         String key = generateKey(message, 7, 8, 9, 10);
-                                        saveToQueue(socket, key, message);
+                                        List<Integer> copyOfMessage = new ArrayList<>(message);
+                                        saveToQueue(socket, key, copyOfMessage);
 
                                         if (message.get(7).equals(0x0f) && message.get(8).equals(0x80)) {
                                             if (message.get(10).equals(0x15)) {
@@ -172,13 +196,10 @@ public class TCReceiveMessageManager {
         return sb.toString();
     }
 
-    private void saveToQueue(Socket socket, String key, List<Integer> message) {
-        responseQueues.putIfAbsent(socket, new ConcurrentHashMap<>());
-        responseQueues.get(socket).put(key, new ArrayList<>(message));
-    }
-
-    public Map<String, List<Integer>> getResponseQueue(Socket socket) {
-        return responseQueues.get(socket);
+    private void saveToQueue(Socket socket, String key, List<Integer> copyOfMessage) {
+        responseQueues
+                .computeIfAbsent(socket, s -> new ConcurrentHashMap<>())
+                .put(key, copyOfMessage);
     }
 
     public synchronized void sendNAK(List<Integer> msg, int error, Socket socket, List<String> msgStr) {
@@ -233,7 +254,25 @@ public class TCReceiveMessageManager {
         }
     }
 
-    void handle5FC0Message(String deviceId, List<Integer> message5fc0, List<String> msgstr5fc0) {
+    private void combine5FC45FC5Messages(Socket socket, String key, List<Integer> copyOfMessage) {
+        Map<String, List<Integer>> socketMap = responseQueues.get(socket);
+        String planIdStr = key.substring(4, 6);
+
+        Optional<String> matchingKey = socketMap.keySet().stream()
+                .filter(k -> k.startsWith("5fc4") && k.length() > 5 && k.substring(4, 6).equals(planIdStr))
+                .findFirst();
+
+        if (matchingKey.isPresent()) {
+            List<Integer> oldMessage = socketMap.get(matchingKey.get());    // get 5fc4 message
+            oldMessage.addAll(copyOfMessage);   // append 5fc5 to 5fc4 data
+            socketMap.put(key, oldMessage);
+            socketMap.remove(matchingKey.get());    // remove 5fc4 message
+        } else {
+            socketMap.remove(key);
+        }
+    }
+
+    private void handle5FC0Message(String deviceId, List<Integer> message5fc0, List<String> msgstr5fc0) {
         try {
             int controlStrategy = message5fc0.get(9);
             int effectTime = message5fc0.get(10);
@@ -248,6 +287,77 @@ public class TCReceiveMessageManager {
 
         } catch (Exception e) {
             log.error("Error handling 5FC0 message for device {}: {}", deviceId, e.getMessage(), e);
+        }
+    }
+
+    private void handle5FC4Message(String deviceId, List<Integer> message5fc4, List<String> msgstr5fc4) {
+        try {
+            int planId = message5fc4.get(9);
+            int subPhaseCount = message5fc4.get(10);
+
+            List<Integer> minGreen = new ArrayList<>();
+            List<Integer> maxGreen = new ArrayList<>();
+            List<Integer> yellow = new ArrayList<>();
+            List<Integer> allRed = new ArrayList<>();
+            List<Integer> pedGreenFlash = new ArrayList<>();
+            List<Integer> pedRed = new ArrayList<>();
+
+            int pos = 11;
+            for (int i = 0; i < subPhaseCount; i++) {
+                minGreen.add(message5fc4.get(pos++));
+                maxGreen.add((message5fc4.get(pos++) << 8) | (message5fc4.get(pos++) & 0xFF));
+                yellow.add(message5fc4.get(pos++));
+                allRed.add(message5fc4.get(pos++));
+                pedGreenFlash.add(message5fc4.get(pos++));
+                pedRed.add(message5fc4.get(pos++));
+            }
+
+            JSONObject value = new JSONObject();
+            value.put("planId", planId);
+            value.put("subPhaseCount", subPhaseCount);
+            value.put("minGreen", minGreen);
+            value.put("maxGreen", maxGreen);
+            value.put("yellow", yellow);
+            value.put("allRed", allRed);
+            value.put("pedGreenFlash", pedGreenFlash);
+            value.put("pedRed", pedRed);
+
+            valueMap5FC4.put(deviceId, value);
+
+        } catch (Exception e) {
+            log.error("Error handling 5FC4 message for device {}: {}", deviceId, e.getMessage(), e);
+        }
+    }
+
+    private void handle5FC5Message(String deviceId, List<Integer> message5fc5, List<String> msgstr5fc5) {
+        try {
+            int planId = message5fc5.get(9);
+            int direct = message5fc5.get(10);
+            int phaseOrder = message5fc5.get(11);
+            int subPhaseCount = message5fc5.get(12);
+
+            List<Integer> green = new ArrayList<>();
+            int pos = 13;
+            for (int i = 0; i < subPhaseCount; i++) {
+                green.add((message5fc5.get(pos++) << 8) | (message5fc5.get(pos++) & 0xFF));
+            }
+
+            int cycleTime = (message5fc5.get(pos++) << 8) | (message5fc5.get(pos++) & 0xFF);
+            int offset = (message5fc5.get(pos++) << 8) | (message5fc5.get(pos) & 0xFF);
+
+            JSONObject value = new JSONObject();
+            value.put("planId", planId);
+            value.put("direct", direct);
+            value.put("phaseOrder", String.format("%02x", phaseOrder));
+            value.put("subPhaseCount", subPhaseCount);
+            value.put("green", green);
+            value.put("cycleTime", cycleTime);
+            value.put("offset", offset);
+
+            valueMap5FC5.put(deviceId, value);
+
+        } catch (Exception e) {
+            log.error("Error handling 5FC5 message for device {}: {}", deviceId, e.getMessage(), e);
         }
     }
 

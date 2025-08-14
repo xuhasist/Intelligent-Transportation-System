@@ -11,6 +11,7 @@ import com.demo.dto.TrafficPeriodDto;
 import com.demo.repository.its.TCInfoRepository;
 import com.demo.service.DynamicService;
 import com.demo.service.SocketService;
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,6 +26,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 @Service
@@ -32,6 +34,8 @@ public class DynamicControlManager {
     private static final Logger log = LoggerFactory.getLogger(DynamicControlManager.class);
 
     private static final int effectTime = 5;
+    private static final int testTimes = 1;
+    private static AtomicInteger testCnt = new AtomicInteger(0);
 
     @Value("${app.debug:false}")
     private boolean debugMode;
@@ -133,8 +137,11 @@ public class DynamicControlManager {
                 condition.setConsecutiveCounts(0);    // reset, not consecutive match
             }
 
-            if (debugMode) {
-                dynamicTrigger(program_id, startTime, endTime, isWeekday);
+            if (debugMode && program_id.equals("21001")) {
+                int current = testCnt.incrementAndGet();
+                if (current <= testTimes) {
+                    dynamicTrigger(program_id, startTime, endTime, isWeekday);
+                }
             }
         } catch (Exception e) {
             log.error("Error in checkConditionMatch: {}", e.getMessage());
@@ -190,7 +197,7 @@ public class DynamicControlManager {
                     }
                 }
 
-                Thread.sleep(500); // avoid too frequent requests
+                Thread.sleep(100); // avoid too frequent requests
             }
         } catch (Exception e) {
             log.error("Error in dynamicTrigger: {}", e.getMessage());
@@ -212,9 +219,9 @@ public class DynamicControlManager {
 
             targetPlanId = 0;   // dynamic control can only be applied to plan ID 0
 
+            send5F15(tcId, targetPlanId, data);      // set target plan ID and relevant parameters
+            send5F45(tcId, targetPlanId, data);      // check if parameters is set correctly
             /*
-            send5F15(tcId, targetPlanId);      // set target plan ID and relevant parameters
-            send5F45(tcId, targetPlanId);      // check if target plan ID is set correctly
             send5F18(tcId, targetPlanId);      // enable target plan ID
             */
         } catch (Exception e) {
@@ -223,10 +230,14 @@ public class DynamicControlManager {
     }
 
     private void tryCloseDynamic(String tcId) {
-        send5F10(tcId, ControlStrategy.TOD.getCode());   // disable dynamic control, switch to TOD(Time-of-Day) strategy
+        try {
+            send5F10(tcId, ControlStrategy.TOD.getCode());   // disable dynamic control, switch to TOD(Time-of-Day) strategy
+        } catch (Exception e) {
+            throw new DynamicException(e.getMessage());
+        }
     }
 
-    private void send5F10(String deviceId, int controlStrategy) {
+    private void send5F10(String deviceId, int controlStrategy) throws InterruptedException {
         JSONObject value = new JSONObject();
         value.put("deviceId", deviceId);
         value.put("controlStrategy", controlStrategy);
@@ -237,9 +248,11 @@ public class DynamicControlManager {
         if (!tcSendMessageManager.handle5F10Message(obj)) {
             throw new DynamicException("5F10 dynamic control setting failed");
         }
+
+        Thread.sleep(100);
     }
 
-    private void send5F40(String deviceId, int controlStrategy) {
+    private void send5F40(String deviceId, int controlStrategy) throws InterruptedException {
         JSONObject value = new JSONObject();
         value.put("deviceId", deviceId);
 
@@ -263,5 +276,170 @@ public class DynamicControlManager {
             }
             tcReceiveMessageManager.getValueMap5FC0().remove(deviceId);
         }
+
+        Thread.sleep(100);
+    }
+
+    private void send5F15(String deviceId, int targetPlanId, List<DynamicParameters> data) throws InterruptedException {
+        DynamicParameters first = data.getFirst();  // get the first entry to extract common parameters
+
+        JSONObject value = new JSONObject();
+        value.put("deviceId", deviceId);
+        value.put("planId", targetPlanId);
+        value.put("direct", first.getDirect());
+        value.put("phaseOrder", first.getPhaseOrder());
+        value.put("subPhaseCount", data.size());
+        value.put("cycleTime", first.getCycleTime());
+        value.put("offset", first.getOffset());
+
+        JSONArray subPhases = new JSONArray();
+        for (DynamicParameters dp : data) {
+            JSONObject subPhaseObj = new JSONObject();
+            subPhaseObj.put("subPhaseId", dp.getId().getSubphaseId());
+            subPhaseObj.put("green", dp.getGreen());
+            subPhaseObj.put("yellow", dp.getYellow());
+            subPhaseObj.put("allRed", dp.getAllRed());
+            subPhaseObj.put("pedGreenFlash", dp.getPedGreenFlash());
+            subPhaseObj.put("pedRed", dp.getPedRed());
+            subPhaseObj.put("minGreen", dp.getMinGreen());
+            subPhaseObj.put("maxGreen", dp.getMaxGreen());
+
+            subPhases.put(subPhaseObj);
+        }
+
+        value.put("subPhases", subPhases);
+
+        JSONObject obj = new JSONObject();
+        obj.put("value", value);
+        if (!tcSendMessageManager.handle5F15Message(obj)) {
+            throw new DynamicException("5F15 dynamic parameters setting failed");
+        }
+
+        Thread.sleep(100);
+    }
+
+    private void send5F45(String deviceId, int targetPlanId, List<DynamicParameters> data) throws InterruptedException {
+        JSONObject value = new JSONObject();
+        value.put("deviceId", deviceId);
+        value.put("planId", targetPlanId);
+
+        JSONObject obj = new JSONObject();
+        obj.put("value", value);
+
+        if (!tcSendMessageManager.handle5F45Message(obj)) {
+            throw new DynamicException("5F45 dynamic parameters check failed");
+        } else {
+            // check 5FC5
+            long startTime = System.currentTimeMillis();
+            JSONObject value5FC4, value5FC5;
+            do {
+                value5FC4 = tcReceiveMessageManager.getValueMap5FC4().get(deviceId);
+                value5FC5 = tcReceiveMessageManager.getValueMap5FC5().get(deviceId);
+            } while ((value5FC4 == null || value5FC5 == null) && (System.currentTimeMillis() - startTime < 16000));
+
+            StringBuilder errorLog = new StringBuilder();
+
+            if (value5FC4 == null || value5FC5 == null) {
+                throw new DynamicException("5FC5 null failed");
+            } else if (!check5FC5(data, value5FC4, value5FC5, targetPlanId, errorLog)) {
+                throw new DynamicException("5FC5 parameter mismatch failed, " + errorLog.toString());
+            }
+
+            tcReceiveMessageManager.getValueMap5FC4().remove(deviceId);
+            tcReceiveMessageManager.getValueMap5FC5().remove(deviceId);
+        }
+
+        Thread.sleep(100);
+    }
+
+    private boolean check5FC5(List<DynamicParameters> data, JSONObject value5FC4, JSONObject value5FC5, int targetPlanId, StringBuilder errorLog) {
+        try {
+            DynamicParameters first = data.getFirst();
+            int cycleTime = first.getCycleTime();
+            int direct = first.getDirect();
+            String phaseOrder = first.getPhaseOrder();
+            int subPhaseCount = data.size();
+            int offset = first.getOffset();
+
+            boolean basicMatch = true;
+            basicMatch &= compareInt("planId (5fc4)", targetPlanId, value5FC4.getInt("planId"), errorLog);
+            basicMatch &= compareInt("planId (5fc5)", targetPlanId, value5FC5.getInt("planId"), errorLog);
+            basicMatch &= compareInt("cycleTime", cycleTime, value5FC5.getInt("cycleTime"), errorLog);
+            basicMatch &= compareInt("direct", direct, value5FC5.getInt("direct"), errorLog);
+            basicMatch &= compareString("phaseOrder", phaseOrder, value5FC5.getString("phaseOrder"), errorLog);
+            basicMatch &= compareInt("subPhaseCount (5fc4)", subPhaseCount, value5FC4.getInt("subPhaseCount"), errorLog);
+            basicMatch &= compareInt("subPhaseCount (5fc5)", subPhaseCount, value5FC5.getInt("subPhaseCount"), errorLog);
+            basicMatch &= compareInt("offset", offset, value5FC5.getInt("offset"), errorLog);
+
+            if (!basicMatch) return false;
+
+            // compare lists
+            List<Integer> green = new ArrayList<>();
+            List<Integer> minGreen = new ArrayList<>();
+            List<Integer> maxGreen = new ArrayList<>();
+            List<Integer> yellow = new ArrayList<>();
+            List<Integer> allRed = new ArrayList<>();
+            List<Integer> pedGreenFlash = new ArrayList<>();
+            List<Integer> pedRed = new ArrayList<>();
+
+            for (DynamicParameters p : data) {
+                green.add(p.getGreen());
+                minGreen.add(p.getMinGreen());
+                maxGreen.add(p.getMaxGreen());
+                yellow.add(p.getYellow());
+                allRed.add(p.getAllRed());
+                pedGreenFlash.add(p.getPedGreenFlash());
+                pedRed.add(p.getPedRed());
+            }
+
+            boolean listMatch = true;
+            listMatch &= compareList(green, value5FC5.getJSONArray("green"), "green", errorLog);
+            listMatch &= compareList(minGreen, value5FC4.getJSONArray("minGreen"), "minGreen", errorLog);
+            listMatch &= compareList(maxGreen, value5FC4.getJSONArray("maxGreen"), "maxGreen", errorLog);
+            listMatch &= compareList(yellow, value5FC4.getJSONArray("yellow"), "yellow", errorLog);
+            listMatch &= compareList(allRed, value5FC4.getJSONArray("allRed"), "allRed", errorLog);
+            listMatch &= compareList(pedGreenFlash, value5FC4.getJSONArray("pedGreenFlash"), "pedGreenFlash", errorLog);
+            listMatch &= compareList(pedRed, value5FC4.getJSONArray("pedRed"), "pedRed", errorLog);
+
+            return listMatch;
+
+        } catch (Exception e) {
+            errorLog.append("Exception: ").append(e.getMessage()).append("\n");
+            log.error("Error in check5FC5: {}", e.getMessage());
+            return false;
+        }
+    }
+
+    private boolean compareInt(String name, int expected, int actual, StringBuilder errorLog) {
+        if (expected != actual) {
+            errorLog.append(String.format("%s mismatch: expected=%d, actual=%d%n", name, expected, actual));
+            return false;
+        }
+        return true;
+    }
+
+    private boolean compareString(String name, String expected, String actual, StringBuilder errorLog) {
+        if (!expected.equalsIgnoreCase(actual)) {
+            errorLog.append(String.format("%s mismatch: expected=%s, actual=%s%n", name, expected, actual));
+            return false;
+        }
+        return true;
+    }
+
+    private boolean compareList(List<Integer> expected, JSONArray actualArray, String name, StringBuilder errorLog) {
+        List<Integer> actual = jsonArrayToList(actualArray);
+        if (!expected.equals(actual)) {
+            errorLog.append(String.format("%s list mismatch: expected=%s, actual=%s%n", name, expected, actual));
+            return false;
+        }
+        return true;
+    }
+
+    private List<Integer> jsonArrayToList(JSONArray array) {
+        List<Integer> list = new ArrayList<>();
+        for (int i = 0; i < array.length(); i++) {
+            list.add(array.getInt(i));
+        }
+        return list;
     }
 }

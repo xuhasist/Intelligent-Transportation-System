@@ -30,7 +30,7 @@ public class DynamicParameters {
     @Column(name = "cycletime", nullable = false)
     private Integer cycleTime;
 
-    @Column(name = "offset", nullable = false)
+    @Column(name = "`offset`", nullable = false)
     private Integer offset;
 
     @Column(name = "green", nullable = false)

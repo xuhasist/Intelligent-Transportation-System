@@ -63,6 +63,8 @@ public class TCSendMessageManager {
             handle5F15Message(obj);
         } else if (messageId.equals("5F40")) {
             handle5F40Message(obj);
+        } else if (messageId.equals("5F45")) {
+            handle5F45Message(obj);
         }
 
         // Other commands are handled but not shown
@@ -128,6 +130,29 @@ public class TCSendMessageManager {
         return false;
     }
 
+    public boolean handle5F45Message(JSONObject obj) {
+        String deviceId = obj.getJSONObject("value").getString("deviceId");
+        int planId = obj.getJSONObject("value").getInt("planId");
+
+        try {
+            Message5F44 msg5F44 = messageService.buildMessage5F44(obj);
+            Message5F45 msg5F45 = messageService.buildMessage5F45(obj);
+
+            String successKey_c4 = "5fc4" + String.format("%02d", planId);
+            String successKey_c5 = "5fc5" + String.format("%02d", planId);
+            String failKey = "";
+
+            if (sendMessage(deviceId, "5f44", msg5F44, successKey_c4, failKey)) {
+                return sendMessage(deviceId, "5f45", msg5F45, successKey_c5, failKey);
+            }
+
+        } catch (Exception e) {
+            log.error("handle5F45Message failed, deviceIds = {} ", deviceId, e);
+        }
+
+        return false;
+    }
+
     void publish5FC0Message(String deviceId, List<Integer> message) {
         try {
             ZonedDateTime currentTime = ZonedDateTime.now();
@@ -157,7 +182,6 @@ public class TCSendMessageManager {
             returnData.put("value", value);
 
             boolean success = mqttClientService.publish(1, false, topic, returnData.toString());
-
             messageService.saveMessageLog(returnData, null, success ? null : "Publish success but return false", MessageDefine.chtit_to_mqtt.ordinal());
 
         } catch (Exception e) {
@@ -214,7 +238,6 @@ public class TCSendMessageManager {
             returnData.put("value", value);
 
             boolean success = mqttClientService.publish(1, false, topic, returnData.toString());
-
             messageService.saveMessageLog(returnData, null, success ? null : "Publish success but return false", MessageDefine.chtit_to_mqtt.ordinal());
 
         } catch (Exception e) {
@@ -300,7 +323,7 @@ public class TCSendMessageManager {
             case "5f14" -> {
                 if (response.get(7) == 15 && response.get(8) == 129) {      // 0F81 setting fail
                     publish0F80or0F81Message(deviceId, response);
-                    tcReceiveMessageManager.getResponseQueue(socket).remove(successKey);
+                    tcReceiveMessageManager.getResponseQueues().get(socket).remove(successKey);
                     return false;
                 }
             }
@@ -308,9 +331,9 @@ public class TCSendMessageManager {
             case "5f40" -> publish5FC0Message(deviceId, response);
         }
 
-        // 5f14 has to wait for 5f15
-        if (!command.equals("5f14")) {
-            tcReceiveMessageManager.getResponseQueue(socket).remove(successKey);
+        // 5f14 has to wait for 5f15, 5fc4 has to wait for 5fc5
+        if (!command.equals("5f14") && !command.equals("5f44")) {
+            tcReceiveMessageManager.getResponseQueues().get(socket).remove(successKey);
         }
 
         return true;
@@ -321,7 +344,7 @@ public class TCSendMessageManager {
         String[] keys = {successKey, failKey, nakKey};
 
         while (System.currentTimeMillis() - startTime < (long) timeoutMillis) {
-            Map<String, List<Integer>> map = tcReceiveMessageManager.getResponseQueue(socket);
+            Map<String, List<Integer>> map = tcReceiveMessageManager.getResponseQueues().get(socket);
 
             if (map != null) {
                 for (String key : keys) {
