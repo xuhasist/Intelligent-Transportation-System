@@ -61,6 +61,8 @@ public class TCSendMessageManager {
             handle5F10Message(obj);
         } else if (messageId.equals("5F15")) {
             handle5F15Message(obj);
+        } else if (messageId.equals("5F18")) {
+            handle5F18Message(obj);
         } else if (messageId.equals("5F40")) {
             handle5F40Message(obj);
         } else if (messageId.equals("5F45")) {
@@ -107,6 +109,24 @@ public class TCSendMessageManager {
 
         } catch (Exception e) {
             log.error("handle5F15Message failed, deviceIds = {} ", deviceId, e);
+        }
+
+        return false;
+    }
+
+    public boolean handle5F18Message(JSONObject obj) {
+        String deviceId = obj.getJSONObject("value").getString("deviceId");
+
+        try {
+            Message5F18 msg5F18 = messageService.buildMessage5F18(obj);
+
+            String successKey = "0f805f18";
+            String failKey = "0f815f18";
+
+            return sendMessage(deviceId, "5f18", msg5F18, successKey, failKey);
+
+        } catch (Exception e) {
+            log.error("handle5F18Message failed, deviceIds = {} ", deviceId, e);
         }
 
         return false;
@@ -327,7 +347,7 @@ public class TCSendMessageManager {
                     return false;
                 }
             }
-            case "5f15", "5f10" -> publish0F80or0F81Message(deviceId, response);
+            case "5f10", "5f15", "5f18" -> publish0F80or0F81Message(deviceId, response);
             case "5f40" -> publish5FC0Message(deviceId, response);
         }
 
@@ -368,6 +388,7 @@ public class TCSendMessageManager {
             case "5f10" -> gen5FMessageService.gen5F10(addr, (Message5F10) msgobj);
             case "5f14" -> gen5FMessageService.gen5F14(addr, (Message5F14) msgobj);
             case "5f15" -> gen5FMessageService.gen5F15(addr, (Message5F15) msgobj);
+            case "5f18" -> gen5FMessageService.gen5F18(addr, (Message5F18) msgobj);
             case "5f40" -> gen5FMessageService.gen5F40(addr, (Message5F40) msgobj);
             case "5f44" -> gen5FMessageService.gen5F44(addr, (Message5F44) msgobj);
             case "5f45" -> gen5FMessageService.gen5F45(addr, (Message5F45) msgobj);

@@ -87,6 +87,15 @@ public class MessageService {
                 .build();
     }
 
+    public Message5F18 buildMessage5F18(JSONObject obj) {
+        JSONObject value = obj.getJSONObject("value");
+        int planId = value.getInt("planId");
+
+        return Message5F18.builder()
+                .planId(planId)
+                .build();
+    }
+
     public Message5F40 buildMessage5F40(JSONObject obj) {
         return Message5F40.builder().build();
     }

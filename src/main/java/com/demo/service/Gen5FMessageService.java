@@ -113,6 +113,27 @@ public class Gen5FMessageService {
         return msg;
     }
 
+    public List<Integer> gen5F18(String addr, Message5F18 msgobj) {
+        List<Integer> msg = new ArrayList<>();
+        msg.add(MsgHandler.DLE);
+        msg.add(MsgHandler.STX);
+        msg.add(MsgHandler.getSEQ());
+        msg.add(Integer.parseInt(addr) >> 8);
+        msg.add(Integer.parseInt(addr) % 256);
+        msg.add(0);
+        msg.add(13);
+        msg.add(0x5F);
+        msg.add(0x18);
+        msg.add(msgobj.getPlanId());
+        msg.add(MsgHandler.DLE);
+        msg.add(MsgHandler.ETX);
+        msg.add(msgHandler.genCKS(msg));
+
+        msg = msgHandler.sendNormalize(msg);
+
+        return msg;
+    }
+
     public List<Integer> gen5F40(String addr, Message5F40 msgobj) {
         List<Integer> msg = new ArrayList<>();
         msg.add(MsgHandler.DLE);

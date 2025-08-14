@@ -221,9 +221,7 @@ public class DynamicControlManager {
 
             send5F15(tcId, targetPlanId, data);      // set target plan ID and relevant parameters
             send5F45(tcId, targetPlanId, data);      // check if parameters is set correctly
-            /*
-            send5F18(tcId, targetPlanId);      // enable target plan ID
-            */
+            send5F18(tcId, targetPlanId);            // enable target plan ID
         } catch (Exception e) {
             throw new DynamicException(e.getMessage());
         }
@@ -408,6 +406,20 @@ public class DynamicControlManager {
             log.error("Error in check5FC5: {}", e.getMessage());
             return false;
         }
+    }
+
+    private void send5F18(String deviceId, int targetPlanId) throws InterruptedException {
+        JSONObject value = new JSONObject();
+        value.put("deviceId", deviceId);
+        value.put("planId", targetPlanId);
+
+        JSONObject obj = new JSONObject();
+        obj.put("value", value);
+        if (!tcSendMessageManager.handle5F18Message(obj)) {
+            throw new DynamicException("5F18 enable target plan ID failed");
+        }
+
+        Thread.sleep(100);
     }
 
     private boolean compareInt(String name, int expected, int actual, StringBuilder errorLog) {
