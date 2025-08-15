@@ -1,5 +1,5 @@
 # Intelligent Transportation System
-A dynamic traffic light control system based on real-time vehicle flow, built with **Java 21** and **Spring Boot 3.5.3**.
+A dynamic traffic signal control system based on real-time vehicle flow, built with **Java 21** and **Spring Boot 3.5.3**.
 
 
 ## 🧩 Features
