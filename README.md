@@ -10,6 +10,7 @@ A dynamic traffic light control system based on real-time vehicle flow, built wi
 - Socket communication with traffic controllers (TCs)
 - MySQL Database Integration via Spring Data JPA
 - API Documentation with Springdoc OpenAPI (Swagger UI)
+- Discord Notification for sending alerts
 
 
 ## 🚀 Getting Started
@@ -59,6 +60,7 @@ src
      │    ├── model             # JPA entities
      │    │    ├── dynamic      # Entities for db_dynamic database
      │    │    └── its          # Entities for db_its database
+     │    ├── notification      # Discord notification
      │    ├── repository        # JPA repositories
      │    │    ├── dynamic      # Repositories for db_dynamic database
      │    │    └── its          # Repositories for db_its database
