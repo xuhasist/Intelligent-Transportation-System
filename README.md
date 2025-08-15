@@ -5,7 +5,7 @@ A dynamic traffic signal control system based on real-time vehicle flow, built w
 ## 🧩 Features
 - RESTful API with Spring Boot Web
 - JWT Authentication with Spring Security & JJWT
-- Scheduled tasks trigger dynamic traffic control for real-time traffic flow
+- Scheduled tasks for real-time dynamic traffic signal control
 - MQTT Client for parsing and forwarding traffic control messages
 - Socket communication with traffic controllers (TCs)
 - MySQL Database Integration via Spring Data JPA
