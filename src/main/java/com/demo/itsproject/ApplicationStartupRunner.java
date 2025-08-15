@@ -1,9 +1,11 @@
 package com.demo.itsproject;
 
+import com.demo.notification.DiscordNotifier;
 import com.demo.service.MqttClientService;
 import com.demo.service.SocketService;
 import org.slf4j.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
@@ -21,11 +23,16 @@ public class ApplicationStartupRunner implements CommandLineRunner {
     @Autowired
     private SocketService socketService;
 
+    @Autowired
+    private DiscordNotifier discordNotifier;
+
     @Override
     public void run(String... args) {
         try {
             ZonedDateTime currentTime = ZonedDateTime.now();
-            log.info("System starting at {}", currentTime.format(formatter));
+            String notify = "System started successfully at " + currentTime.format(formatter);
+            log.info(notify);
+            discordNotifier.sendMessage(notify);
 
             mqttClientService.connect();
             socketService.socketConnect();

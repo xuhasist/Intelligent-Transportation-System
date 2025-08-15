@@ -2,6 +2,7 @@ package com.demo.service;
 
 import com.demo.manager.TCReceiveMessageManager;
 import com.demo.model.its.TCInfo;
+import com.demo.notification.DiscordNotifier;
 import com.demo.repository.its.TCInfoRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -10,12 +11,16 @@ import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.net.*;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 public class SocketService {
     private static final Logger log = LoggerFactory.getLogger(SocketService.class);
+    private static final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+
     private final Map<String, Socket> socketMap = new ConcurrentHashMap<>();
 
     @Autowired
@@ -23,6 +28,9 @@ public class SocketService {
 
     @Autowired
     private TCReceiveMessageManager tcReceiveMessageManager;
+
+    @Autowired
+    private DiscordNotifier discordNotifier;
 
     public void socketConnect() {
         List<TCInfo> tcDevices = tcInfoRepository.findByEnable((byte) 1);
@@ -66,6 +74,9 @@ public class SocketService {
 
     public void removeConnection(String ip) {
         socketMap.remove(ip);
+
+        String notify = "Connection removed for TC IP: " + ip + " at " + LocalDateTime.now().format(formatter);
+        discordNotifier.sendMessage(notify);
     }
 
     public boolean isHostConnected(String ip) {

@@ -8,6 +8,7 @@ import com.demo.model.its.TCInfo;
 import com.demo.dto.ConditionDto;
 import com.demo.dto.ThresholdDto;
 import com.demo.dto.TrafficPeriodDto;
+import com.demo.notification.DiscordNotifier;
 import com.demo.repository.its.TCInfoRepository;
 import com.demo.service.DynamicService;
 import com.demo.service.SocketService;
@@ -25,6 +26,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
@@ -32,6 +34,7 @@ import java.util.stream.Collectors;
 @Service
 public class DynamicControlManager {
     private static final Logger log = LoggerFactory.getLogger(DynamicControlManager.class);
+    private static final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     private static final int effectTime = 5;
     private static final int testTimes = 1;
@@ -54,6 +57,9 @@ public class DynamicControlManager {
 
     @Autowired
     private SocketService socketService;
+
+    @Autowired
+    private DiscordNotifier discordNotifier;
 
     @Async
     public void startTrafficCalculation(TrafficPeriodDto period, Boolean isWeekday) {
@@ -156,7 +162,7 @@ public class DynamicControlManager {
                 int targetPlanId = tcPlanMap.get(tc);
 
                 if (debugMode) {
-                    tc = "Test2";
+                    tc = "TestDevice";  // for testing purposes, use a test device
                 }
 
                 String host = tcInfoRepository.findByTcId(tc).getIp();
@@ -180,6 +186,10 @@ public class DynamicControlManager {
                     try {
                         triggerDynamicControl(program_id, tc, targetPlanId);
                         dynamicService.saveDynamicLog(program_id, tc, targetPlanId, DynamicStatus.SUCCESS.getCode(), "apply dynamic control success");
+
+                        String notify = "Dynamic control applied successfully for TC " + tc + " at " + LocalDateTime.now().format(formatter);
+                        discordNotifier.sendMessage(notify);
+
                         success = true;
                         break;
                     } catch (DynamicException e) {

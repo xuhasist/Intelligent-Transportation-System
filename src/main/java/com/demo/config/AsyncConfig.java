@@ -22,10 +22,19 @@ public class AsyncConfig implements AsyncConfigurer {
     @Override
     public Executor getAsyncExecutor() {
         executor = new MonitoringThreadPoolTaskExecutor();
-        executor.setCorePoolSize(32);
-        executor.setMaxPoolSize(200);
-        executor.setQueueCapacity(1000);
-        executor.setKeepAliveSeconds(60);
+
+        // get available CPU cores
+        int cpuCores = Runtime.getRuntime().availableProcessors();
+
+        // set core and max pool sizes based on CPU cores
+        int corePoolSize = cpuCores * 2;
+        int maxPoolSize = cpuCores * 6;
+        int queueCapacity = 1000;
+
+        executor.setCorePoolSize(corePoolSize);
+        executor.setMaxPoolSize(maxPoolSize);
+        executor.setQueueCapacity(queueCapacity);
+
         executor.setThreadNamePrefix("MyAsyncThread-");
         executor.setRejectedExecutionHandler(new ThreadPoolExecutor.DiscardOldestPolicy());
         executor.initialize();

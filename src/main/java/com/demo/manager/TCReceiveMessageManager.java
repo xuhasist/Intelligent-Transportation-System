@@ -255,20 +255,20 @@ public class TCReceiveMessageManager {
     }
 
     private void combine5FC45FC5Messages(Socket socket, String key, List<Integer> copyOfMessage) {
-        Map<String, List<Integer>> socketMap = responseQueues.get(socket);
+        Map<String, List<Integer>> socketMessageMap = responseQueues.get(socket);
         String planIdStr = key.substring(4, 6);
 
-        Optional<String> matchingKey = socketMap.keySet().stream()
+        Optional<String> matchingKey = socketMessageMap.keySet().stream()
                 .filter(k -> k.startsWith("5fc4") && k.length() > 5 && k.substring(4, 6).equals(planIdStr))
                 .findFirst();
 
         if (matchingKey.isPresent()) {
-            List<Integer> oldMessage = socketMap.get(matchingKey.get());    // get 5fc4 message
+            List<Integer> oldMessage = socketMessageMap.get(matchingKey.get());    // get 5fc4 message
             oldMessage.addAll(copyOfMessage);   // append 5fc5 to 5fc4 data
-            socketMap.put(key, oldMessage);
-            socketMap.remove(matchingKey.get());    // remove 5fc4 message
+            socketMessageMap.put(key, oldMessage);
+            socketMessageMap.remove(matchingKey.get());    // remove 5fc4 message
         } else {
-            socketMap.remove(key);
+            socketMessageMap.remove(key);
         }
     }
 
