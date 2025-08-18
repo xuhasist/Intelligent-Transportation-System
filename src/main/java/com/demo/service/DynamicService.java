@@ -174,11 +174,11 @@ public class DynamicService {
         }
     }
 
-    public double calculateCarFlow(String cctvId, LocalDateTime endTime, int timeInterval_minute) {
+    public double getTotalCarFlow(String cctvId, LocalDateTime endTime, int timeInterval_minute) {
         return CctvCarflowByPositionRepository.findCarflowSumByCctvIdAndEndTime(cctvId, endTime, timeInterval_minute);
     }
 
-    public double calculateCarFlow(String cctvId, LocalDateTime endTime, int timeInterval_minute, String startPosition, String endPosition) {
+    public double getSegmentCarFlow(String cctvId, LocalDateTime endTime, int timeInterval_minute, String startPosition, String endPosition) {
         return CctvCarflowByPositionRepository.findCarflowSumByCctvIdAndEndTimeAndStartPositionAndEndPosition(cctvId, endTime, timeInterval_minute, startPosition, endPosition);
     }
 

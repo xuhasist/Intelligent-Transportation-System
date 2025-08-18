@@ -81,13 +81,13 @@ public class DynamicControlManager {
                     List<String> carflowDirection = thresholdData.getCarflowDirectionList();
                     for (String direction : carflowDirection) {
                         if (direction.equalsIgnoreCase("ALL")) {
-                            totalCarFlow += dynamicService.calculateCarFlow(cctv, LocalDateTime.now(), timeInterval_minute);
+                            totalCarFlow += dynamicService.getTotalCarFlow(cctv, LocalDateTime.now(), timeInterval_minute);
                         } else {
                             String[] pos = direction.split("-");  // e.g. "A-B"
                             String startPos = pos[0];
                             String endPos = pos[1];
 
-                            totalCarFlow += dynamicService.calculateCarFlow(cctv, LocalDateTime.now(), timeInterval_minute, startPos, endPos);
+                            totalCarFlow += dynamicService.getSegmentCarFlow(cctv, LocalDateTime.now(), timeInterval_minute, startPos, endPos);
                         }
                     }
                 }

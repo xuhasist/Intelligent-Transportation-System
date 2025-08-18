@@ -1,6 +1,5 @@
-package com.demo.handler;
+package com.demo.exception;
 
-import com.demo.exception.CustomException;
 import com.demo.dto.ErrorResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;

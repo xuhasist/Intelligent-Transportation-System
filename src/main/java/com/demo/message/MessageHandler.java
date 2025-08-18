@@ -1,4 +1,4 @@
-package com.demo.handler;
+package com.demo.message;
 
 import com.demo.repository.its.TCInfoRepository;
 import org.slf4j.Logger;
@@ -10,8 +10,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.*;
 
 @Component
-public class MsgHandler {
-    private static final Logger log = LoggerFactory.getLogger(MsgHandler.class);
+public class MessageHandler {
+    private static final Logger log = LoggerFactory.getLogger(MessageHandler.class);
 
     public final static int DLE = 0xaa;
     public final static int STX = 0xbb;

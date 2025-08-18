@@ -1,7 +1,5 @@
-package com.demo.service;
+package com.demo.message;
 
-import com.demo.handler.MsgHandler;
-import com.demo.message.*;
 import lombok.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -12,16 +10,16 @@ import java.util.*;
 @Builder(toBuilder = true)
 @Setter
 @Getter
-public class Gen5FMessageService {
+public class MessageGenerator {
 
     @Autowired
-    private MsgHandler msgHandler;
+    private MessageHandler messageHandler;
 
     public List<Integer> gen5F10(String addr, Message5F10 msgobj) {
         List<Integer> msg = new ArrayList<>();
-        msg.add(MsgHandler.DLE);
-        msg.add(MsgHandler.STX);
-        msg.add(MsgHandler.getSEQ());
+        msg.add(MessageHandler.DLE);
+        msg.add(MessageHandler.STX);
+        msg.add(MessageHandler.getSEQ());
         msg.add(Integer.parseInt(addr) >> 8);
         msg.add(Integer.parseInt(addr) % 256);
         msg.add(0);
@@ -30,11 +28,11 @@ public class Gen5FMessageService {
         msg.add(0x10);
         msg.add(msgobj.getControlStrategy());
         msg.add(msgobj.getEffecTime());
-        msg.add(MsgHandler.DLE);
-        msg.add(MsgHandler.ETX);
-        msg.add(msgHandler.genCKS(msg));
+        msg.add(MessageHandler.DLE);
+        msg.add(MessageHandler.ETX);
+        msg.add(messageHandler.genCKS(msg));
 
-        msg = msgHandler.sendNormalize(msg);
+        msg = messageHandler.sendNormalize(msg);
 
         return msg;
     }
@@ -44,9 +42,9 @@ public class Gen5FMessageService {
         int msglength = 14 + (subphasecount * 7);
 
         List<Integer> msg = new ArrayList<>();
-        msg.add(MsgHandler.DLE);
-        msg.add(MsgHandler.STX);
-        msg.add(MsgHandler.getSEQ());
+        msg.add(MessageHandler.DLE);
+        msg.add(MessageHandler.STX);
+        msg.add(MessageHandler.getSEQ());
         msg.add(Integer.parseInt(addr) >> 8);
         msg.add(Integer.parseInt(addr) % 256);
         msg.add(msglength >> 8);
@@ -66,11 +64,11 @@ public class Gen5FMessageService {
             msg.add(msgobj.getDynamicArray().get(i).getPedRed());
         }
 
-        msg.add(MsgHandler.DLE);
-        msg.add(MsgHandler.ETX);
-        msg.add(msgHandler.genCKS(msg));
+        msg.add(MessageHandler.DLE);
+        msg.add(MessageHandler.ETX);
+        msg.add(messageHandler.genCKS(msg));
 
-        msg = msgHandler.sendNormalize(msg);
+        msg = messageHandler.sendNormalize(msg);
 
         return msg;
     }
@@ -80,9 +78,9 @@ public class Gen5FMessageService {
         int msglength = 20 + 2 * subphasecount;
 
         List<Integer> msg = new ArrayList<>();
-        msg.add(MsgHandler.DLE);
-        msg.add(MsgHandler.STX);
-        msg.add(MsgHandler.getSEQ());
+        msg.add(MessageHandler.DLE);
+        msg.add(MessageHandler.STX);
+        msg.add(MessageHandler.getSEQ());
         msg.add(Integer.parseInt(addr) >> 8);
         msg.add(Integer.parseInt(addr) % 256);
         msg.add(msglength >> 8);
@@ -104,20 +102,20 @@ public class Gen5FMessageService {
         msg.add(msgobj.getOffset() >> 8);
         msg.add(msgobj.getOffset() % 256);
 
-        msg.add(MsgHandler.DLE);
-        msg.add(MsgHandler.ETX);
-        msg.add(msgHandler.genCKS(msg));
+        msg.add(MessageHandler.DLE);
+        msg.add(MessageHandler.ETX);
+        msg.add(messageHandler.genCKS(msg));
 
-        msg = msgHandler.sendNormalize(msg);
+        msg = messageHandler.sendNormalize(msg);
 
         return msg;
     }
 
     public List<Integer> gen5F18(String addr, Message5F18 msgobj) {
         List<Integer> msg = new ArrayList<>();
-        msg.add(MsgHandler.DLE);
-        msg.add(MsgHandler.STX);
-        msg.add(MsgHandler.getSEQ());
+        msg.add(MessageHandler.DLE);
+        msg.add(MessageHandler.STX);
+        msg.add(MessageHandler.getSEQ());
         msg.add(Integer.parseInt(addr) >> 8);
         msg.add(Integer.parseInt(addr) % 256);
         msg.add(0);
@@ -125,40 +123,40 @@ public class Gen5FMessageService {
         msg.add(0x5F);
         msg.add(0x18);
         msg.add(msgobj.getPlanId());
-        msg.add(MsgHandler.DLE);
-        msg.add(MsgHandler.ETX);
-        msg.add(msgHandler.genCKS(msg));
+        msg.add(MessageHandler.DLE);
+        msg.add(MessageHandler.ETX);
+        msg.add(messageHandler.genCKS(msg));
 
-        msg = msgHandler.sendNormalize(msg);
+        msg = messageHandler.sendNormalize(msg);
 
         return msg;
     }
 
     public List<Integer> gen5F40(String addr, Message5F40 msgobj) {
         List<Integer> msg = new ArrayList<>();
-        msg.add(MsgHandler.DLE);
-        msg.add(MsgHandler.STX);
-        msg.add(MsgHandler.getSEQ());
+        msg.add(MessageHandler.DLE);
+        msg.add(MessageHandler.STX);
+        msg.add(MessageHandler.getSEQ());
         msg.add(Integer.parseInt(addr) >> 8);
         msg.add(Integer.parseInt(addr) % 256);
         msg.add(0);
         msg.add(12);
         msg.add(0x5F);
         msg.add(0x40);
-        msg.add(MsgHandler.DLE);
-        msg.add(MsgHandler.ETX);
-        msg.add(msgHandler.genCKS(msg));
+        msg.add(MessageHandler.DLE);
+        msg.add(MessageHandler.ETX);
+        msg.add(messageHandler.genCKS(msg));
 
-        msg = msgHandler.sendNormalize(msg);
+        msg = messageHandler.sendNormalize(msg);
 
         return msg;
     }
 
     public List<Integer> gen5F44(String addr, Message5F44 msgobj) {
         List<Integer> msg = new ArrayList<>();
-        msg.add(MsgHandler.DLE);
-        msg.add(MsgHandler.STX);
-        msg.add(MsgHandler.getSEQ());
+        msg.add(MessageHandler.DLE);
+        msg.add(MessageHandler.STX);
+        msg.add(MessageHandler.getSEQ());
         msg.add(Integer.parseInt(addr) >> 8);
         msg.add(Integer.parseInt(addr) % 256);
         msg.add(0);
@@ -166,20 +164,20 @@ public class Gen5FMessageService {
         msg.add(0x5F);
         msg.add(0x44);
         msg.add(msgobj.getPlanId());
-        msg.add(MsgHandler.DLE);
-        msg.add(MsgHandler.ETX);
-        msg.add(msgHandler.genCKS(msg));
+        msg.add(MessageHandler.DLE);
+        msg.add(MessageHandler.ETX);
+        msg.add(messageHandler.genCKS(msg));
 
-        msg = msgHandler.sendNormalize(msg);
+        msg = messageHandler.sendNormalize(msg);
 
         return msg;
     }
 
     public List<Integer> gen5F45(String addr, Message5F45 msgobj) {
         List<Integer> msg = new ArrayList<>();
-        msg.add(MsgHandler.DLE);
-        msg.add(MsgHandler.STX);
-        msg.add(MsgHandler.getSEQ());
+        msg.add(MessageHandler.DLE);
+        msg.add(MessageHandler.STX);
+        msg.add(MessageHandler.getSEQ());
         msg.add(Integer.parseInt(addr) >> 8);
         msg.add(Integer.parseInt(addr) % 256);
         msg.add(0);
@@ -187,11 +185,11 @@ public class Gen5FMessageService {
         msg.add(0x5F);
         msg.add(0x45);
         msg.add(msgobj.getPlanId());
-        msg.add(MsgHandler.DLE);
-        msg.add(MsgHandler.ETX);
-        msg.add(msgHandler.genCKS(msg));
+        msg.add(MessageHandler.DLE);
+        msg.add(MessageHandler.ETX);
+        msg.add(messageHandler.genCKS(msg));
 
-        msg = msgHandler.sendNormalize(msg);
+        msg = messageHandler.sendNormalize(msg);
 
         return msg;
     }

@@ -1,7 +1,7 @@
 package com.demo.manager;
 
 import com.demo.enums.MessageDefine;
-import com.demo.handler.MsgHandler;
+import com.demo.message.MessageHandler;
 
 import com.demo.repository.its.TCInfoRepository;
 import com.demo.service.MessageService;
@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.net.Socket;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 
 @Service
 public class TCReceiveMessageManager {
@@ -45,7 +44,7 @@ public class TCReceiveMessageManager {
     private SocketService socketService;
 
     @Autowired
-    private MsgHandler msgHandler;
+    private MessageHandler messageHandler;
 
     @Autowired
     private MessageService messageService;
@@ -78,7 +77,7 @@ public class TCReceiveMessageManager {
                     int checkcode = 0;
 
                     if (message.size() == 8) {
-                        if (message.get(1).equals(MsgHandler.ACK)) {
+                        if (message.get(1).equals(MessageHandler.ACK)) {
                             // save TcMessageLog
 
                             message.clear();
@@ -86,7 +85,7 @@ public class TCReceiveMessageManager {
                         }
 
                     } else if (message.size() == 9) {
-                        if (message.get(1).equals(MsgHandler.NAK)) {
+                        if (message.get(1).equals(MessageHandler.NAK)) {
                             String key = Integer.toHexString(message.get(0)) + Integer.toHexString(message.get(1));
                             key = key + String.format("%03x", message.get(2));
 
@@ -99,20 +98,20 @@ public class TCReceiveMessageManager {
                             msgstr.clear();
                         }
                     } else if (message.size() > 9) {
-                        if ((message.get(1).equals(MsgHandler.STX)) && (
-                                (!(message.get(message.size() - 4).equals(MsgHandler.DLE))
-                                        && message.get(message.size() - 3).equals(MsgHandler.DLE)
-                                        && message.get(message.size() - 2).equals(MsgHandler.ETX))
-                                        || (message.get(message.size() - 5).equals(MsgHandler.DLE)
-                                        && message.get(message.size() - 4).equals(MsgHandler.DLE)
-                                        && message.get(message.size() - 3).equals(MsgHandler.DLE)
-                                        && message.get(message.size() - 2).equals(MsgHandler.ETX)))) {
+                        if ((message.get(1).equals(MessageHandler.STX)) && (
+                                (!(message.get(message.size() - 4).equals(MessageHandler.DLE))
+                                        && message.get(message.size() - 3).equals(MessageHandler.DLE)
+                                        && message.get(message.size() - 2).equals(MessageHandler.ETX))
+                                        || (message.get(message.size() - 5).equals(MessageHandler.DLE)
+                                        && message.get(message.size() - 4).equals(MessageHandler.DLE)
+                                        && message.get(message.size() - 3).equals(MessageHandler.DLE)
+                                        && message.get(message.size() - 2).equals(MessageHandler.ETX)))) {
 
-                            if ((checkcode = msgHandler.checkCode(message, ip)) != 0) {
+                            if ((checkcode = messageHandler.checkCode(message, ip)) != 0) {
                                 sendNAK(message, checkcode, socket, msgstr);
                             } else {
                                 sendACK(message, socket, msgstr);
-                                message = msgHandler.recvNormalize(message);
+                                message = messageHandler.recvNormalize(message);
 
                                 if (message.get(7).equals(0x5f)) {
                                     int value = message.get(8);
@@ -174,8 +173,8 @@ public class TCReceiveMessageManager {
 
                             msgstr.clear();
                             message.clear();
-                        } else if (message.get(message.size() - 3).equals(MsgHandler.DLE)
-                                && message.get(message.size() - 2).equals(MsgHandler.ETX)) {
+                        } else if (message.get(message.size() - 3).equals(MessageHandler.DLE)
+                                && message.get(message.size() - 2).equals(MessageHandler.ETX)) {
                             msgstr.clear();
                             message.clear();
                         }
@@ -204,7 +203,7 @@ public class TCReceiveMessageManager {
 
     public synchronized void sendNAK(List<Integer> msg, int error, Socket socket, List<String> msgStr) {
         List<Integer> nak = new ArrayList<>(Arrays.asList(
-                MsgHandler.DLE, MsgHandler.NAK, msg.get(2), msg.get(3), msg.get(4),
+                MessageHandler.DLE, MessageHandler.NAK, msg.get(2), msg.get(3), msg.get(4),
                 0x00, 0x09, error, 0
         ));
 
@@ -213,7 +212,7 @@ public class TCReceiveMessageManager {
 
     public synchronized void sendACK(List<Integer> msg, Socket socket, List<String> msgStr) {
         List<Integer> ack = new ArrayList<>(Arrays.asList(
-                MsgHandler.DLE, MsgHandler.ACK, msg.get(2), msg.get(3), msg.get(4),
+                MessageHandler.DLE, MessageHandler.ACK, msg.get(2), msg.get(3), msg.get(4),
                 0x00, 0x08, 0
         ));
 
@@ -227,7 +226,7 @@ public class TCReceiveMessageManager {
             String deviceId = tcInfoRepository.findByIp(host).getTcId();
 
             // 計算校驗碼
-            messageList.set(messageList.size() - 1, msgHandler.genCKS(messageList));
+            messageList.set(messageList.size() - 1, messageHandler.genCKS(messageList));
 
             List<String> hexList = new ArrayList<>();
             BufferedOutputStream out = new BufferedOutputStream(socket.getOutputStream());

@@ -5,7 +5,7 @@ import com.demo.enums.NakDefine;
 import com.demo.repository.its.TCInfoRepository;
 import com.demo.message.*;
 import com.demo.service.MessageService;
-import com.demo.service.Gen5FMessageService;
+import com.demo.message.MessageGenerator;
 import com.demo.service.MqttClientService;
 import com.demo.service.SocketService;
 import org.json.JSONObject;
@@ -34,7 +34,7 @@ public class TCSendMessageManager {
     private TCInfoRepository tcInfoRepository;
 
     @Autowired
-    private Gen5FMessageService gen5FMessageService;
+    private MessageGenerator messageGenerator;
 
     @Autowired
     @Lazy
@@ -76,7 +76,7 @@ public class TCSendMessageManager {
         String deviceId = obj.getJSONObject("value").getString("deviceId");
 
         try {
-            Message5F10 msg5F10 = messageService.buildMessage5F10(obj);
+            Message5F10 msg5F10 = (Message5F10) messageService.buildMessage(obj, "5f10");
 
             String successKey = "0f805f10";
             String failKey = "0f815f10";
@@ -94,8 +94,8 @@ public class TCSendMessageManager {
         String deviceId = obj.getJSONObject("value").getString("deviceId");
 
         try {
-            Message5F14 msg5F14 = messageService.buildMessage5F14(obj);
-            Message5F15 msg5F15 = messageService.buildMessage5F15(obj);
+            Message5F14 msg5F14 = (Message5F14) messageService.buildMessage(obj, "5f14");
+            Message5F15 msg5F15 = (Message5F15) messageService.buildMessage(obj, "5f15");
 
             String successKey_14 = "0f805f14";
             String failKey_14 = "0f815f14";
@@ -118,7 +118,7 @@ public class TCSendMessageManager {
         String deviceId = obj.getJSONObject("value").getString("deviceId");
 
         try {
-            Message5F18 msg5F18 = messageService.buildMessage5F18(obj);
+            Message5F18 msg5F18 = (Message5F18) messageService.buildMessage(obj, "5f18");
 
             String successKey = "0f805f18";
             String failKey = "0f815f18";
@@ -136,7 +136,7 @@ public class TCSendMessageManager {
         String deviceId = obj.getJSONObject("value").getString("deviceId");
 
         try {
-            Message5F40 msg5F40 = messageService.buildMessage5F40(obj);
+            Message5F40 msg5F40 = (Message5F40) messageService.buildMessage(obj, "5f40");
 
             String successKey = "5fc0";
             String failKey = "";
@@ -155,8 +155,8 @@ public class TCSendMessageManager {
         int planId = obj.getJSONObject("value").getInt("planId");
 
         try {
-            Message5F44 msg5F44 = messageService.buildMessage5F44(obj);
-            Message5F45 msg5F45 = messageService.buildMessage5F45(obj);
+            Message5F44 msg5F44 = (Message5F44) messageService.buildMessage(obj, "5f44");
+            Message5F45 msg5F45 = (Message5F45) messageService.buildMessage(obj, "5f45");
 
             String successKey_c4 = "5fc4" + String.format("%02d", planId);
             String successKey_c5 = "5fc5" + String.format("%02d", planId);
@@ -334,14 +334,16 @@ public class TCSendMessageManager {
     }
 
     private boolean handleResponse(List<Integer> response, String command, String deviceId, Socket socket, String successKey) {
-        if (response.get(0) == 170 && response.get(1) == 238) {     // NAK = aa ee
+        if (response.get(0) == 0xAA && response.get(1) == 0xEE) {     // NAK
             String msg = "TC respond NAK: " + NakDefine.getDescriptionByValue(response.get(7));
             return false;
         }
 
         switch (command) {
             case "5f14" -> {
-                if (response.get(7) == 15 && response.get(8) == 129) {      // 0F81 setting fail
+                // only handle 0F81 setting failure
+                // if 0F80 success, do nothing and wait for 5F15
+                if (response.get(7) == 0x0F && response.get(8) == 0x81) {
                     publish0F80or0F81Message(deviceId, response);
                     tcReceiveMessageManager.getResponseQueues().get(socket).remove(successKey);
                     return false;
@@ -383,16 +385,6 @@ public class TCSendMessageManager {
 
     private List<Integer> genMsg(String host, String command, MessageObject msgobj) {
         String addr = String.valueOf(tcInfoRepository.findByIp(host).getAddr());
-
-        return switch (command) {
-            case "5f10" -> gen5FMessageService.gen5F10(addr, (Message5F10) msgobj);
-            case "5f14" -> gen5FMessageService.gen5F14(addr, (Message5F14) msgobj);
-            case "5f15" -> gen5FMessageService.gen5F15(addr, (Message5F15) msgobj);
-            case "5f18" -> gen5FMessageService.gen5F18(addr, (Message5F18) msgobj);
-            case "5f40" -> gen5FMessageService.gen5F40(addr, (Message5F40) msgobj);
-            case "5f44" -> gen5FMessageService.gen5F44(addr, (Message5F44) msgobj);
-            case "5f45" -> gen5FMessageService.gen5F45(addr, (Message5F45) msgobj);
-            default -> null;
-        };
+        return messageService.generateMessage(addr, command, msgobj);
     }
 }
