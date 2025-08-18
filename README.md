@@ -52,11 +52,10 @@ src
      │    ├── controller        # REST API endpoints (auth, paging, Excel export, etc.)
      │    ├── dto               # DTOs for requests and responses
      │    ├── enums             # Application constants
-     │    ├── exception         # Custom exceptions
-     │    ├── handler           # Global exception handling & dynamic traffic control communication protocol processing
+     │    ├── exception         # Custom exceptions & global exception handling
      │    ├── itsproject        # Main application entry point
      │    ├── manager           # Dynamic traffic control logic and message handling
-     │    ├── message           # Definitions of traffic control communication message
+     │    ├── message           # Definition of traffic control communication messages & protocol processing
      │    ├── model             # JPA entities
      │    │    ├── dynamic      # Entities for db_dynamic database
      │    │    └── its          # Entities for db_its database
