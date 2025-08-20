@@ -11,6 +11,7 @@ A dynamic traffic signal control system based on real-time vehicle flow, built w
 - MySQL Database Integration via Spring Data JPA
 - API Documentation with Springdoc OpenAPI (Swagger UI)
 - Discord Notification for sending alerts
+- Asynchronous multi-threaded processing of TC messages
 
 
 ## 🚀 Getting Started
