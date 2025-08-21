@@ -1,10 +1,10 @@
 package com.demo.service;
 
-import com.demo.model.its.TCInfo;
-import com.demo.model.its.TCMessageLog;
-import com.demo.dto.TCMessageLogDto;
-import com.demo.repository.its.TCInfoRepository;
-import com.demo.repository.its.TCMessageLogRepository;
+import com.demo.model.its.TcInfo;
+import com.demo.model.its.TcMessageLog;
+import com.demo.dto.TcMessageLogDto;
+import com.demo.repository.its.TcInfoRepository;
+import com.demo.repository.its.TcMessageLogRepository;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -19,25 +19,25 @@ import java.util.List;
 import java.util.Map;
 
 @Service
-public class TCService {
+public class TcService {
     @Autowired
-    private TCMessageLogRepository tcMessageLogRepository;
+    private TcMessageLogRepository tcMessageLogRepository;
 
     @Autowired
-    private TCInfoRepository tcInfoRepository;
+    private TcInfoRepository tcInfoRepository;
 
     @Autowired
     private ObjectMapper objectMapper;
 
-    public Page<TCMessageLogDto> getTCMessageLog(String startDate, String endDate, int page, int size) throws JsonProcessingException {
-        Page<TCMessageLog> pageResult = tcMessageLogRepository.findByLogTimeBetween(
+    public Page<TcMessageLogDto> getTCMessageLog(String startDate, String endDate, int page, int size) throws JsonProcessingException {
+        Page<TcMessageLog> pageResult = tcMessageLogRepository.findByLogTimeBetween(
                 objectMapper.readValue("\"" + startDate + "\"", LocalDateTime.class), // convert String to Json and then using global ObjectMapper to parse it
                 objectMapper.readValue("\"" + endDate + "\"", LocalDateTime.class),
                 PageRequest.of(page, size)
         );
 
         return pageResult.map(data -> {
-            TCMessageLogDto dto = TCMessageLogDto.builder()
+            TcMessageLogDto dto = TcMessageLogDto.builder()
                     .id(data.getId())
                     .deviceId(data.getDeviceId())
                     .messageId(data.getMessageId())
@@ -63,7 +63,7 @@ public class TCService {
     }
 
     @Cacheable("tcInfo")
-    public List<TCInfo> getTCInfo() {
+    public List<TcInfo> getTCInfo() {
         //System.out.println("getTCInfo called");  // testing for assuring cache is working
         return tcInfoRepository.findAll();
     }

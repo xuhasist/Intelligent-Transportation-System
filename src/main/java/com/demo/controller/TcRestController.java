@@ -2,9 +2,9 @@ package com.demo.controller;
 
 import com.demo.enums.ErrorDefine;
 import com.demo.exception.CustomException;
-import com.demo.dto.TCMessageLogDto;
+import com.demo.dto.TcMessageLogDto;
 import com.demo.service.JwtTokenService;
-import com.demo.service.TCService;
+import com.demo.service.TcService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -17,16 +17,16 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api")
-public class TCRestController {
+public class TcRestController {
 
     @Autowired
-    private TCService tcService;
+    private TcService tcService;
 
     @Autowired
     private JwtTokenService jwtTokenService;
 
     @GetMapping("/getTCMessageLog")
-    public Page<TCMessageLogDto> getTCMessageLog(
+    public Page<TcMessageLogDto> getTCMessageLog(
             HttpServletRequest request,
             @RequestParam String startDate,
             @RequestParam String endDate,

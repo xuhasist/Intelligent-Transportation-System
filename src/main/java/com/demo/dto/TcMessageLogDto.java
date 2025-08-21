@@ -10,7 +10,7 @@ import java.util.Map;
 @Getter
 @AllArgsConstructor
 @NoArgsConstructor
-public class TCMessageLogDto {
+public class TcMessageLogDto {
     private Long id;
     private String deviceId;
     private String messageId;

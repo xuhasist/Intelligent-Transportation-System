@@ -1,16 +1,14 @@
 package com.demo.service;
 
 import com.demo.message.*;
-import com.demo.model.its.TCMessageLog;
-import com.demo.repository.its.TCMessageLogRepository;
-import org.json.JSONArray;
+import com.demo.model.its.TcMessageLog;
+import com.demo.repository.its.TcMessageLogRepository;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -18,7 +16,7 @@ public class MessageService {
     private static final Logger log = LoggerFactory.getLogger(MessageService.class);
 
     @Autowired
-    private TCMessageLogRepository tcMessageLogRepository;
+    private TcMessageLogRepository tcMessageLogRepository;
 
     @Autowired
     private MessageBuilder messageBuilder;
@@ -52,14 +50,14 @@ public class MessageService {
         };
     }
 
-    public TCMessageLog saveMessageLog(JSONObject obj, String rawValue, String returnResult, int noteCode) {
+    public TcMessageLog saveMessageLog(JSONObject obj, String rawValue, String returnResult, int noteCode) {
         String deviceId = obj.getJSONObject("value").getString("deviceId");
         String messageId = obj.getString("messageId").toUpperCase();
         String jsonValue = obj.getJSONObject("value").toString();
 
-        TCMessageLog tcLog = null;
+        TcMessageLog tcLog = null;
         try {
-            tcLog = TCMessageLog.builder()
+            tcLog = TcMessageLog.builder()
                     .deviceId(deviceId)
                     .messageId(messageId.toUpperCase())
                     .jsonValue(jsonValue)

@@ -2,7 +2,7 @@ package com.demo.manager;
 
 import com.demo.enums.MessageDefine;
 import com.demo.enums.NakDefine;
-import com.demo.repository.its.TCInfoRepository;
+import com.demo.repository.its.TcInfoRepository;
 import com.demo.message.*;
 import com.demo.service.MessageService;
 import com.demo.message.MessageGenerator;
@@ -24,14 +24,14 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 @Service
-public class TCSendMessageManager {
-    private static final Logger log = LoggerFactory.getLogger(TCSendMessageManager.class);
+public class TcSendMessageManager {
+    private static final Logger log = LoggerFactory.getLogger(TcSendMessageManager.class);
     private static final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ssZ");
 
     private final String topic_tc_publish_prefix = "/v3/demo/device/TC/";
 
     @Autowired
-    private TCInfoRepository tcInfoRepository;
+    private TcInfoRepository tcInfoRepository;
 
     @Autowired
     private MessageGenerator messageGenerator;
@@ -47,7 +47,7 @@ public class TCSendMessageManager {
     private SocketService socketService;
 
     @Autowired
-    private TCReceiveMessageManager tcReceiveMessageManager;
+    private TcReceiveMessageManager tcReceiveMessageManager;
 
     @Async
     public void run(String message) {

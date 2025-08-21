@@ -3,7 +3,7 @@ package com.demo.manager;
 import com.demo.enums.MessageDefine;
 import com.demo.message.MessageHandler;
 
-import com.demo.repository.its.TCInfoRepository;
+import com.demo.repository.its.TcInfoRepository;
 import com.demo.service.MessageService;
 import com.demo.service.SocketService;
 import lombok.Getter;
@@ -23,8 +23,8 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Service
-public class TCReceiveMessageManager {
-    private static final Logger log = LoggerFactory.getLogger(TCReceiveMessageManager.class);
+public class TcReceiveMessageManager {
+    private static final Logger log = LoggerFactory.getLogger(TcReceiveMessageManager.class);
 
     @Getter
     private final Map<Socket, Map<String, List<Integer>>> responseQueues = new ConcurrentHashMap<>();
@@ -37,7 +37,7 @@ public class TCReceiveMessageManager {
     private final Map<String, JSONObject> valueMap5FC5 = new ConcurrentHashMap<>();
 
     @Autowired
-    private TCInfoRepository tcInfoRepository;
+    private TcInfoRepository tcInfoRepository;
 
     @Autowired
     @Lazy

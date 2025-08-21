@@ -1,6 +1,6 @@
 package com.demo.message;
 
-import com.demo.repository.its.TCInfoRepository;
+import com.demo.repository.its.TcInfoRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,7 +20,7 @@ public class MessageHandler {
     public final static int NAK = 0xee;
 
     @Autowired
-    private TCInfoRepository tcInfoRepository;
+    private TcInfoRepository tcInfoRepository;
 
     private static final int MAX_SEQ = 255;
     private static final AtomicInteger SEQ = new AtomicInteger(0);

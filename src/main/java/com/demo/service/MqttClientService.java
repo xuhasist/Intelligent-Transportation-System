@@ -1,8 +1,8 @@
 package com.demo.service;
 
-import com.demo.model.its.TCInfo;
-import com.demo.repository.its.TCInfoRepository;
-import com.demo.manager.TCSendMessageManager;
+import com.demo.model.its.TcInfo;
+import com.demo.repository.its.TcInfoRepository;
+import com.demo.manager.TcSendMessageManager;
 import org.eclipse.paho.client.mqttv3.*;
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 import org.slf4j.Logger;
@@ -21,10 +21,10 @@ public class MqttClientService implements MqttCallback {
     private static final Logger log = LoggerFactory.getLogger(MqttClientService.class);
 
     @Autowired
-    private TCInfoRepository tcInfoRepository;
+    private TcInfoRepository tcInfoRepository;
 
     @Autowired
-    private TCSendMessageManager tcSendMessageManager;
+    private TcSendMessageManager tcSendMessageManager;
 
     private MqttClient mqttClient;
 
@@ -99,7 +99,7 @@ public class MqttClientService implements MqttCallback {
 
     public void subscribeTCDevice() {
         try {
-            List<TCInfo> tcls = tcInfoRepository.findByEnable((byte) 1);
+            List<TcInfo> tcls = tcInfoRepository.findByEnable((byte) 1);
             if (tcls == null || tcls.isEmpty()) {
                 log.warn("No TCInfo found");
                 return;

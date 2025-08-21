@@ -4,12 +4,12 @@ import com.demo.enums.ControlStrategy;
 import com.demo.enums.DynamicStatus;
 import com.demo.exception.DynamicException;
 import com.demo.model.dynamic.DynamicParameters;
-import com.demo.model.its.TCInfo;
+import com.demo.model.its.TcInfo;
 import com.demo.dto.ConditionDto;
 import com.demo.dto.ThresholdDto;
 import com.demo.dto.TrafficPeriodDto;
 import com.demo.notification.DiscordNotifier;
-import com.demo.repository.its.TCInfoRepository;
+import com.demo.repository.its.TcInfoRepository;
 import com.demo.service.DynamicService;
 import com.demo.service.SocketService;
 import org.json.JSONArray;
@@ -44,16 +44,16 @@ public class DynamicControlManager {
     private boolean debugMode;
 
     @Autowired
-    private TCReceiveMessageManager tcReceiveMessageManager;
+    private TcReceiveMessageManager tcReceiveMessageManager;
 
     @Autowired
-    private TCSendMessageManager tcSendMessageManager;
+    private TcSendMessageManager tcSendMessageManager;
 
     @Autowired
     private DynamicService dynamicService;
 
     @Autowired
-    private TCInfoRepository tcInfoRepository;
+    private TcInfoRepository tcInfoRepository;
 
     @Autowired
     private SocketService socketService;
@@ -171,8 +171,8 @@ public class DynamicControlManager {
                     continue;
                 }
 
-                Optional<TCInfo> tcOpt = tcInfoRepository.findById(tc);
-                TCInfo tcData = tcOpt.orElse(null);
+                Optional<TcInfo> tcOpt = tcInfoRepository.findById(tc);
+                TcInfo tcData = tcOpt.orElse(null);
                 if (tcData == null || tcData.getEnable().equals(Byte.valueOf("0"))) {
                     dynamicService.saveDynamicLog(program_id, tc, targetPlanId, DynamicStatus.FAILURE.getCode(), "dynamic control not enabled for TC");
                     continue;

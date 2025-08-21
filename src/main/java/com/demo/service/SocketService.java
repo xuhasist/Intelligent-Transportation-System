@@ -1,9 +1,9 @@
 package com.demo.service;
 
-import com.demo.manager.TCReceiveMessageManager;
-import com.demo.model.its.TCInfo;
+import com.demo.manager.TcReceiveMessageManager;
+import com.demo.model.its.TcInfo;
 import com.demo.notification.DiscordNotifier;
-import com.demo.repository.its.TCInfoRepository;
+import com.demo.repository.its.TcInfoRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,17 +24,17 @@ public class SocketService {
     private final Map<String, Socket> socketMap = new ConcurrentHashMap<>();
 
     @Autowired
-    private TCInfoRepository tcInfoRepository;
+    private TcInfoRepository tcInfoRepository;
 
     @Autowired
-    private TCReceiveMessageManager tcReceiveMessageManager;
+    private TcReceiveMessageManager tcReceiveMessageManager;
 
     @Autowired
     private DiscordNotifier discordNotifier;
 
     public void socketConnect() {
-        List<TCInfo> tcDevices = tcInfoRepository.findByEnable((byte) 1);
-        for (TCInfo tc : tcDevices) {
+        List<TcInfo> tcDevices = tcInfoRepository.findByEnable((byte) 1);
+        for (TcInfo tc : tcDevices) {
             singleSocketConnect(tc.getIp(), tc.getPort());
         }
     }
@@ -113,8 +113,8 @@ public class SocketService {
     }
 
     public void checkAllConnections() {
-        List<TCInfo> allTC = tcInfoRepository.findAll();
-        for (TCInfo tc : allTC) {
+        List<TcInfo> allTC = tcInfoRepository.findAll();
+        for (TcInfo tc : allTC) {
             String ip = tc.getIp();
 
             if (!isHostConnected(ip)) {     // disconnected

@@ -9,7 +9,7 @@ import lombok.*;
 @Builder(toBuilder = true)
 @AllArgsConstructor
 @NoArgsConstructor
-public class TCInfo {
+public class TcInfo {
     @Id
     @Column(name = "tc_id", length = 10, nullable = false)
     private String tcId;
