@@ -10,12 +10,12 @@ import lombok.NoArgsConstructor;
 import java.util.*;
 
 @Entity
-@Table(name = "users")
+@Table(name = "user")
 @Data
 @Builder(toBuilder = true)
 @AllArgsConstructor
 @NoArgsConstructor
-public class Users {
+public class User {
     @Id
     @Column(name = "username", nullable = false, length = 100)
     private String username;

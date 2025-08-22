@@ -1,6 +1,6 @@
 package com.demo.service;
 
-import com.demo.model.its.Users;
+import com.demo.model.its.User;
 import com.demo.repository.its.UsersRepository;
 import com.demo.security.CustomUserDetails;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,7 +18,7 @@ public class CustomUserDetailsService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        Users user = usersRepository.findByUsername(username);
+        User user = usersRepository.findByUsername(username);
 
         if (user == null) {
             throw new UsernameNotFoundException("User not found with username: " + username);

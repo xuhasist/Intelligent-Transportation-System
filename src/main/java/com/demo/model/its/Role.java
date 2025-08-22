@@ -1,5 +1,6 @@
 package com.demo.model.its;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -15,6 +16,7 @@ import lombok.NoArgsConstructor;
 public class Role {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @JsonIgnore
     private Long id;
 
     @Column(name = "name", nullable = false, length = 60)

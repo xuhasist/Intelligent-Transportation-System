@@ -1,6 +1,6 @@
 package com.demo.controller;
 
-import com.demo.model.its.Users;
+import com.demo.model.its.User;
 import com.demo.dto.ApiResponse;
 import com.demo.dto.JwtAuthenticationResponse;
 import com.demo.dto.SignupRequest;
@@ -20,7 +20,7 @@ public class AuthController {
     private AuthService authService;
 
     @PostMapping("/signin")
-    public ResponseEntity<Object> authenticateUser(@Valid @RequestBody Users loginRequest) {
+    public ResponseEntity<Object> authenticateUser(@Valid @RequestBody User loginRequest) {
         JwtAuthenticationResponse response = authService.authenticate(loginRequest.getUsername(), loginRequest.getPassword());
         SystemLogResponse<JwtAuthenticationResponse> retVal = new SystemLogResponse<>();
         retVal.setData(response);

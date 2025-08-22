@@ -3,7 +3,7 @@ package com.demo.service;
 import com.demo.enums.ErrorDefine;
 import com.demo.exception.CustomException;
 import com.demo.model.its.Role;
-import com.demo.model.its.Users;
+import com.demo.model.its.User;
 import com.demo.dto.JwtAuthenticationResponse;
 import com.demo.dto.SignupRequest;
 import com.demo.repository.its.RoleRepository;
@@ -40,7 +40,7 @@ public class AuthService {
     private RoleRepository roleRepository;
 
     public JwtAuthenticationResponse authenticate(String username, String password) {
-        Users findUser = usersRepository.findByUsername(username);
+        User findUser = usersRepository.findByUsername(username);
 
         if ((findUser == null) || !(passwordEncoder.matches(password, findUser.getPassword()))) {
             throw new CustomException(ErrorDefine.AuthenticationFailed.getDescription(), HttpStatus.UNAUTHORIZED);
@@ -93,7 +93,7 @@ public class AuthService {
                     }
                 }).collect(Collectors.toSet());
 
-        Users user = Users.builder()
+        User user = User.builder()
                 .username(signUpRequest.getUsername())
                 .password(passwordEncoder.encode(signUpRequest.getPassword()))
                 .roles(roleSet)
