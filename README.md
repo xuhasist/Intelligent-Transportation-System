@@ -53,10 +53,10 @@ src
      │    ├── controller        # REST API endpoints (auth, paging, Excel export, etc.)
      │    ├── dto               # DTOs for requests and responses
      │    ├── enums             # Application constants
-     │    ├── exception         # Custom exceptions & global exception handling
+     │    ├── exception         # Custom exceptions and global exception handling
      │    ├── itsproject        # Main application entry point
      │    ├── manager           # Dynamic traffic control logic and message handling
-     │    ├── message           # Definition of traffic control communication messages & protocol processing
+     │    ├── message           # Definition of traffic control communication messages and protocol processing
      │    ├── model             # JPA entities
      │    │    ├── dynamic      # Entities for db_dynamic database
      │    │    └── its          # Entities for db_its database
@@ -64,12 +64,13 @@ src
      │    ├── repository        # JPA repositories
      │    │    ├── dynamic      # Repositories for db_dynamic database
      │    │    └── its          # Repositories for db_its database
-     │    ├── scheduler         # Scheduled tasks (connection, thread pool, dynamic traffic control checks)
+     │    ├── scheduler         # Scheduled tasks (connection, thread pool, and dynamic traffic condition monitoring)
      │    ├── security          # Security-related classes (UserDetails, etc.) 
      │    ├── service           # Business logic (MQTT, socket, REST API, data handling, Caffeine caching, etc.)
      │    └── util              # Utility classes (e.g., LocalDateTime serializer/deserializer)
      └── resources
-          └── application.properties      # Environment-specific configurations (excluded)
+          ├── application.properties        # Environment-specific configurations (excluded)
+          └── application-prod.properties   # Configurations for production environment (excluded) 
 ```
 
 ## 🚦 Dynamic Traffic Control Overview
@@ -86,6 +87,6 @@ ScheduledDynamicTask ──> DynamicControlManager ──┤                    
 ```
 
 - **ScheduledDynamicTask**: Regularly checks if the current time falls within any designated dynamic control periods and asynchronously triggers DynamicControlManager for each matching period.
-- **DynamicControlManager**: Performs asynchronous traffic flow calculations, retrieves parameters from DynamicService, evaluates if vehicle counts meet defined thresholds and conditions, and applies dynamic control commands.
+- **DynamicControlManager**: Performs asynchronous traffic flow calculations, retrieves parameters from DynamicService, evaluates if vehicle flow meet defined thresholds and conditions, and applies dynamic control commands.
 - **DynamicService**: Loads and organizes dynamic control parameters from database, storing them in map structures.
 - **TCReceiveMessageManager & TCSendMessageManager**: Manage parsing and processing of dynamic control protocol messages and communicate with Traffic Controllers via socket.
