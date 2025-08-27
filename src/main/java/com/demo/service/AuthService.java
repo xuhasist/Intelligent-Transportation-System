@@ -77,7 +77,7 @@ public class AuthService {
         String rawPassword = signUpRequest.getPassword();
 
         // Password strength validation
-        if (!rawPassword.matches("^(?=.*[^a-zA-Z0-9])(?=.*[A-Z])(?=.*[a-z])(?=.*\\d).{6,}$")) {
+        if (!rawPassword.matches("^(?=.*[^a-zA-Z0-9])(?=.*[A-Z])(?=.*[a-z])(?=.*\\d).{8,}$")) {
             throw new CustomException(ErrorDefine.PasswordSettingFailed.getDescription(), HttpStatus.BAD_REQUEST);
         }
 

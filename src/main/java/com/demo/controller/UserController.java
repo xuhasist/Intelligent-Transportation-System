@@ -18,7 +18,7 @@ public class UserController {
     private JwtTokenService jwtTokenService;
 
     @Autowired
-    private UserService UserService;
+    private UserService userService;
 
     @GetMapping("/getUserInfo")
     public ResponseEntity<Object> getUserInfo(HttpServletRequest request) {
@@ -26,6 +26,6 @@ public class UserController {
             throw new CustomException(ErrorDefine.InvalidToken.getDescription(), HttpStatus.UNAUTHORIZED);
         }
 
-        return ResponseEntity.ok(UserService.getUserInfo());
+        return ResponseEntity.ok(userService.getUserInfo());
     }
 }
