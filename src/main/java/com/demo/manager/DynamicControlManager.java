@@ -28,6 +28,9 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
@@ -38,7 +41,9 @@ public class DynamicControlManager {
 
     private static final int effectTime = 5;
     private static final int testTimes = 1;
-    private static AtomicInteger testCnt = new AtomicInteger(0);
+    private static final AtomicInteger testCnt = new AtomicInteger(0);
+
+    private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
 
     @Value("${app.debug:false}")
     private boolean debugMode;
@@ -63,34 +68,29 @@ public class DynamicControlManager {
 
     @Async
     public void startTrafficCalculation(TrafficPeriodDto period, Boolean isWeekday) {
-        try {
-            period.setInSchedule(true);
+        String program_id = period.getProgramId();
+        int sub_id = period.getSubId();
 
-            String program_id = period.getProgramId();
-            int sub_id = period.getSubId();
+        ThresholdDto thresholdData = dynamicService.getThresholdMap().get(program_id + "-" + sub_id);
 
-            ThresholdDto thresholdData = dynamicService.getThresholdMap().get(program_id + "-" + sub_id);
-            int timeInterval_minute = thresholdData.getTimeInterval();
+        int timeInterval_minutes = thresholdData.getTimeInterval();
+        long timeInterval_milliseconds = (long) timeInterval_minutes * 60 * 1000;
 
-            LocalTime startTime = period.getStartTime();
-            LocalTime endTime = period.getEndTime();
+        LocalTime startTime = period.getStartTime();
+        LocalTime endTime = period.getEndTime();
 
-            if (dynamicService.isInTrafficPeriod(startTime, endTime)) {
-                double totalCarFlow = 0.0;
-                for (String cctv : thresholdData.getCctvList()) {
-                    List<String> carflowDirection = thresholdData.getCarflowDirectionList();
-                    for (String direction : carflowDirection) {
-                        if (direction.equalsIgnoreCase("ALL")) {
-                            totalCarFlow += dynamicService.getTotalCarFlow(cctv, LocalDateTime.now(), timeInterval_minute);
-                        } else {
-                            String[] pos = direction.split("-");  // e.g. "A-B"
-                            String startPos = pos[0];
-                            String endPos = pos[1];
+        scheduler.scheduleAtFixedRate(() -> {
+            try {
+                if (!dynamicService.isInTrafficPeriod(startTime, endTime)) {
+                    log.info("Not in traffic period. Stopping monitoring...");
+                    // schedule end, reset match
+                    thresholdData.setIsMatch(false);
+                    period.getInSchedule().compareAndSet(true, false);
 
-                            totalCarFlow += dynamicService.getSegmentCarFlow(cctv, LocalDateTime.now(), timeInterval_minute, startPos, endPos);
-                        }
-                    }
+                    scheduler.shutdownNow();
+                    return;
                 }
+                double totalCarFlow = calculateTotalCarFlow(thresholdData, timeInterval_minutes);
 
                 // e.g. "180.0 > 55", check if totalCarFlow match condition
                 String express = totalCarFlow + thresholdData.getComparisonOperator() + thresholdData.getThresholdValue();
@@ -100,11 +100,31 @@ public class DynamicControlManager {
                 }
 
                 // Check if all sub-conditions are satisfied for the final result
-                checkConditionMatch(program_id, startTime, endTime, isWeekday);
+                checkConditionMatch(program_id, startTime, endTime, isWeekday, timeInterval_milliseconds);
+
+            } catch (Exception e) {
+                log.error("Error in startTrafficCalculation: {}", e.getMessage());
             }
-        } catch (Exception e) {
-            log.error("Error in startTrafficCalculation: {}", e.getMessage());
+        }, 0, timeInterval_milliseconds, TimeUnit.MILLISECONDS);
+    }
+
+    private double calculateTotalCarFlow(ThresholdDto thresholdData, int timeInterval_minutes) {
+        double totalCarFlow = 0.0;
+        for (String cctv : thresholdData.getCctvList()) {
+            List<String> carflowDirection = thresholdData.getCarflowDirectionList();
+            for (String direction : carflowDirection) {
+                if (direction.equalsIgnoreCase("ALL")) {
+                    totalCarFlow += dynamicService.getTotalCarFlow(cctv, LocalDateTime.now(), timeInterval_minutes);
+                } else {
+                    String[] pos = direction.split("-");  // e.g. "A-B"
+                    String startPos = pos[0];
+                    String endPos = pos[1];
+
+                    totalCarFlow += dynamicService.getSegmentCarFlow(cctv, LocalDateTime.now(), timeInterval_minutes, startPos, endPos);
+                }
+            }
         }
+        return totalCarFlow;
     }
 
     public static boolean evaluateCondition(String expression) {
@@ -113,7 +133,7 @@ public class DynamicControlManager {
         return Boolean.TRUE.equals(exp.getValue(Boolean.class));
     }
 
-    public void checkConditionMatch(String program_id, LocalTime startTime, LocalTime endTime, boolean isWeekday) {
+    public void checkConditionMatch(String program_id, LocalTime startTime, LocalTime endTime, boolean isWeekday, long intervalMillis) {
         try {
             ConditionDto condition = dynamicService.getConditionMap().get(program_id);
 
@@ -132,15 +152,22 @@ public class DynamicControlManager {
 
             // 3. use SpEL parsing
             if (evaluateCondition(spelCondition)) {
-                condition.setConsecutiveCounts(condition.getConsecutiveCounts() + 1);
+                int newCount = condition.getConsecutiveCounts().incrementAndGet();  // thread safe plus one
 
-                if (condition.getConsecutiveCounts().equals(condition.getConsecutiveMatches())) {
-                    // apply dynamic control
-                    dynamicTrigger(program_id, startTime, endTime, isWeekday);
-                    condition.setConsecutiveCounts(0);    // reset after triggering
+                if (newCount == condition.getConsecutiveMatches()) {
+                    long lastTime = condition.getLastTriggeredTime().get();
+                    long now = System.currentTimeMillis();
+
+                    if (now - lastTime >= intervalMillis) {
+                        if (condition.getLastTriggeredTime().compareAndSet(lastTime, now)) {
+                            // apply dynamic control
+                            condition.getConsecutiveCounts().set(0);    // reset
+                            dynamicTrigger(program_id, startTime, endTime, isWeekday);
+                        }
+                    }
                 }
             } else {
-                condition.setConsecutiveCounts(0);    // reset, not consecutive match
+                condition.getConsecutiveCounts().set(0);    // reset, not consecutive match
             }
 
             if (debugMode && program_id.equals("21001")) {
@@ -288,7 +315,8 @@ public class DynamicControlManager {
         Thread.sleep(100);
     }
 
-    private void send5F15(String deviceId, int targetPlanId, List<DynamicParameters> data) throws InterruptedException {
+    private void send5F15(String deviceId, int targetPlanId, List<DynamicParameters> data) throws
+            InterruptedException {
         DynamicParameters first = data.getFirst();  // get the first entry to extract common parameters
 
         JSONObject value = new JSONObject();
@@ -326,7 +354,8 @@ public class DynamicControlManager {
         Thread.sleep(100);
     }
 
-    private void send5F45(String deviceId, int targetPlanId, List<DynamicParameters> data) throws InterruptedException {
+    private void send5F45(String deviceId, int targetPlanId, List<DynamicParameters> data) throws
+            InterruptedException {
         JSONObject value = new JSONObject();
         value.put("deviceId", deviceId);
         value.put("planId", targetPlanId);
@@ -360,7 +389,8 @@ public class DynamicControlManager {
         Thread.sleep(100);
     }
 
-    private boolean check5FC5(List<DynamicParameters> data, JSONObject value5FC4, JSONObject value5FC5, int targetPlanId, StringBuilder errorLog) {
+    private boolean check5FC5(List<DynamicParameters> data, JSONObject value5FC4, JSONObject value5FC5,
+                              int targetPlanId, StringBuilder errorLog) {
         try {
             DynamicParameters first = data.getFirst();
             int cycleTime = first.getCycleTime();
@@ -448,7 +478,8 @@ public class DynamicControlManager {
         return true;
     }
 
-    private boolean compareList(List<Integer> expected, JSONArray actualArray, String name, StringBuilder errorLog) {
+    private boolean compareList(List<Integer> expected, JSONArray actualArray, String name, StringBuilder
+            errorLog) {
         List<Integer> actual = jsonArrayToList(actualArray);
         if (!expected.equals(actual)) {
             errorLog.append(String.format("%s list mismatch: expected=%s, actual=%s%n", name, expected, actual));

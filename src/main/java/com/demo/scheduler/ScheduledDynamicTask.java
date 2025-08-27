@@ -43,14 +43,14 @@ public class ScheduledDynamicTask {
 
         List<TrafficPeriodDto> activePeriods = dynamicService.getTrafficPeriodsMap().get(isWeekday);
         for (TrafficPeriodDto period : activePeriods) {
-            if (period.isInSchedule()) continue;     // running dynamic control, skip it
+            if (period.getInSchedule().get()) continue;     // running dynamic control, skip it
 
             LocalTime start = period.getStartTime();
             LocalTime end = period.getEndTime();
 
             if (dynamicService.isInTrafficPeriod(start, end)) {
-                //log.info("Current time is in range: " + start + " - " + end);
-                dynamicControlManager.startTrafficCalculation(period, isWeekday);
+                if(period.getInSchedule().compareAndSet(false, true))
+                    dynamicControlManager.startTrafficCalculation(period, isWeekday);
             }
         }
     }

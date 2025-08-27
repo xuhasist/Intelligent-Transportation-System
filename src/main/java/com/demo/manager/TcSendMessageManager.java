@@ -22,6 +22,7 @@ import java.net.Socket;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.concurrent.*;
 
 @Service
 public class TcSendMessageManager {
@@ -29,6 +30,8 @@ public class TcSendMessageManager {
     private static final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ssZ");
 
     private final String topic_tc_publish_prefix = "/v3/demo/device/TC/";
+
+    private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
 
     @Autowired
     private TcInfoRepository tcInfoRepository;
@@ -297,13 +300,18 @@ public class TcSendMessageManager {
         for (int retry = 0; retry < maxRetries; retry++) {
             sendMessageToSocket(out, msg, deviceId, command);
 
-            // wait for 5 secs
-            List<Integer> response = waitForSpecificResponse(socket, 5000, successKey, failKey, nakKey);
-            if (response != null) {
-                return handleResponse(response, command, deviceId, socket, successKey);
+            try {
+                // wait for 5 secs
+                List<Integer> response = waitForSpecificResponse(socket, 5000, successKey, failKey, nakKey).get();
+                if (response != null) {
+                    return handleResponse(response, command, deviceId, socket, successKey);
+                }
+
+                log.warn("No response, retry {} for {}:{}", retry + 1, deviceId, command);
+            } catch (InterruptedException | ExecutionException e) {
+                log.error("Exception occurred during CompletableFuture execution for device {} and command {}.", deviceId, command, e.getCause());
             }
 
-            log.warn("No response, retry {} for {}:{}", retry + 1, deviceId, command);
             Thread.sleep(100);
         }
 
@@ -361,26 +369,39 @@ public class TcSendMessageManager {
         return true;
     }
 
-    private List<Integer> waitForSpecificResponse(Socket socket, int timeoutMillis, String successKey, String failKey, String nakKey) throws InterruptedException {
-        long startTime = System.currentTimeMillis();
+    private CompletableFuture<List<Integer>> waitForSpecificResponse(Socket socket, int timeoutMillis, String successKey, String failKey, String nakKey) throws InterruptedException {
+        CompletableFuture<List<Integer>> futureResult = new CompletableFuture<>();
         String[] keys = {successKey, failKey, nakKey};
 
-        while (System.currentTimeMillis() - startTime < (long) timeoutMillis) {
-            Map<String, List<Integer>> map = tcReceiveMessageManager.getResponseQueues().get(socket);
+        long startTime = System.currentTimeMillis();
 
-            if (map != null) {
-                for (String key : keys) {
-                    if (map.containsKey(key)) {
-                        return map.get(key);
+        ScheduledFuture<?> scheduledTask = scheduler.scheduleAtFixedRate(() -> {
+            try {
+                Map<String, List<Integer>> map = tcReceiveMessageManager.getResponseQueues().get(socket);
+
+                if (map != null) {
+                    for (String key : keys) {
+                        if (map.containsKey(key)) {
+                            List<Integer> result = map.get(key);
+                            futureResult.complete(result);       // CompletableFuture completes
+                            return;
+                        }
                     }
                 }
+
+                // Timeout check
+                if (System.currentTimeMillis() - startTime > timeoutMillis) {
+                    futureResult.complete(null);             // timeout null
+                }
+            } catch (Exception e) {
+                futureResult.completeExceptionally(e);
             }
+        }, 0, 100, TimeUnit.MILLISECONDS);
 
-            // check again
-            Thread.sleep(100);
-        }
+        // When completableFuture completes，cancel scheduled task
+        futureResult.whenComplete((res, ex) -> scheduledTask.cancel(false));
 
-        return null;
+        return futureResult;
     }
 
     private List<Integer> genMsg(String host, String command, MessageObject msgobj) {

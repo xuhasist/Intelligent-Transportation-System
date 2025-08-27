@@ -17,6 +17,9 @@ import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 @Service
 public class DynamicService {
@@ -122,7 +125,8 @@ public class DynamicService {
             ConditionDto conditionDto = ConditionDto.builder()
                     .conditionExpression(entry.getConditionExpression())
                     .consecutiveMatches(entry.getConsecutiveMatches())
-                    .consecutiveCounts(0)
+                    .consecutiveCounts(new AtomicInteger(0))
+                    .lastTriggeredTime(new AtomicLong(0))
                     .build();
 
             conditionMap.putIfAbsent(entry.getProgramId(), conditionDto);
@@ -148,7 +152,7 @@ public class DynamicService {
                         .subId(entry.getId().getSubId())
                         .startTime(startTime)
                         .endTime(endTime)
-                        .inSchedule(false)
+                        .inSchedule(new AtomicBoolean(false))
                         .build();
 
                 trafficPeriodsMap.computeIfAbsent(isWeekday, k -> new java.util.ArrayList<>()).add(trafficPeriodDto);

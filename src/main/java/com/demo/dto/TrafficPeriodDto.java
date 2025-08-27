@@ -3,6 +3,7 @@ package com.demo.dto;
 import lombok.*;
 
 import java.time.LocalTime;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 @Builder(toBuilder = true)
 @Setter
@@ -13,5 +14,6 @@ public class TrafficPeriodDto {
     private final Integer subId;
     private final LocalTime startTime;
     private final LocalTime endTime;
-    private boolean inSchedule;
+    @Builder.Default
+    private AtomicBoolean inSchedule = new AtomicBoolean(false);
 }
