@@ -31,8 +31,6 @@ public class TcSendMessageManager {
 
     private final String topic_tc_publish_prefix = "/v3/demo/device/TC/";
 
-    private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
-
     @Autowired
     private TcInfoRepository tcInfoRepository;
 
@@ -375,6 +373,7 @@ public class TcSendMessageManager {
 
         long startTime = System.currentTimeMillis();
 
+        ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
         ScheduledFuture<?> scheduledTask = scheduler.scheduleAtFixedRate(() -> {
             try {
                 Map<String, List<Integer>> map = tcReceiveMessageManager.getResponseQueues().get(socket);

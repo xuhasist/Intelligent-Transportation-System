@@ -43,8 +43,6 @@ public class DynamicControlManager {
     private static final int testTimes = 1;
     private static final AtomicInteger testCnt = new AtomicInteger(0);
 
-    private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
-
     @Value("${app.debug:false}")
     private boolean debugMode;
 
@@ -79,6 +77,7 @@ public class DynamicControlManager {
         LocalTime startTime = period.getStartTime();
         LocalTime endTime = period.getEndTime();
 
+        ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
         scheduler.scheduleAtFixedRate(() -> {
             try {
                 if (!dynamicService.isInTrafficPeriod(startTime, endTime)) {
