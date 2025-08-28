@@ -1,9 +1,7 @@
 package com.demo.service;
 
 import com.demo.config.JwtConfig;
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.JwtException;
-import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.*;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -21,12 +19,13 @@ public class JwtTokenService {
     private SecretKey secretKey;
 
     // create JWT
-    public String generateToken(String username) {
+    public String generateToken(String username, String scope) {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + jwtConfig.getExpiration());
 
         return Jwts.builder()
                 .subject(username)
+                .claim("scope", scope)
                 .issuedAt(now)
                 .expiration(expiryDate)
                 .issuer(jwtConfig.getIssuer())
@@ -34,15 +33,41 @@ public class JwtTokenService {
                 .compact();
     }
 
-    public String getUsernameFromToken(String token) {
+    public boolean validateToken(Claims claims, boolean requirePasswordReset) {
+        try {
+            // expiration check
+            if (claims.getExpiration().before(new Date())) {
+                return false;
+            }
+
+            String scope = claims.get("scope", String.class);
+            if (!requirePasswordReset) {
+                return !"PASSWORD_RESET".equals(scope);
+            }
+
+            return true;
+
+        } catch (JwtException | IllegalArgumentException e) {
+            // Includes signature errors, format errors, expiration, etc.
+            return false;
+        }
+    }
+
+    public String getUsernameFromToken(String token, boolean requirePasswordReset) {
         return parseToken(token)
+                .filter(claims -> validateToken(claims, requirePasswordReset))
                 .map(Claims::getSubject)
                 .orElse("invalid token");
     }
 
+    // default requirePasswordReset = false
     public boolean needsAuthentication(HttpServletRequest request) {
+        return needsAuthentication(request, false);
+    }
+
+    public boolean needsAuthentication(HttpServletRequest request, boolean requirePasswordReset) {
         return getTokenFromRequest(request)
-                .map(this::getUsernameFromToken)
+                .map(token -> getUsernameFromToken(token, requirePasswordReset))
                 .map(username -> username.equals("invalid token"))
                 .orElse(true);
     }

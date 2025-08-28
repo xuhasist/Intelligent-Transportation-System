@@ -1,6 +1,6 @@
 package com.demo.controller;
 
-import com.demo.enums.ErrorDefine;
+import com.demo.enums.AuthDefine;
 import com.demo.exception.CustomException;
 import com.demo.model.dynamic.DynamicThreshold;
 import com.demo.service.DynamicService;
@@ -24,7 +24,7 @@ public class DynamicController {
     @GetMapping("/getAllDynamicThreshold")
     public ResponseEntity<Object> getAllDynamicThreshold(HttpServletRequest request) {
         if (jwtTokenService.needsAuthentication(request)) {
-            throw new CustomException(ErrorDefine.InvalidToken.getDescription(), HttpStatus.UNAUTHORIZED);
+            throw new CustomException(AuthDefine.InvalidToken.getDescription(), HttpStatus.UNAUTHORIZED);
         }
 
         return ResponseEntity.ok(dynamicService.getAllDynamicThresholds());
@@ -35,7 +35,7 @@ public class DynamicController {
             HttpServletRequest request,
             @RequestBody DynamicThreshold updateData) {
         if (jwtTokenService.needsAuthentication(request)) {
-            throw new CustomException(ErrorDefine.InvalidToken.getDescription(), HttpStatus.UNAUTHORIZED);
+            throw new CustomException(AuthDefine.InvalidToken.getDescription(), HttpStatus.UNAUTHORIZED);
         }
 
         return ResponseEntity.ok(dynamicService.updateDynamicThreshold(updateData));

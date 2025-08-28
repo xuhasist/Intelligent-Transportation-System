@@ -1,6 +1,6 @@
 package com.demo.controller;
 
-import com.demo.enums.ErrorDefine;
+import com.demo.enums.AuthDefine;
 import com.demo.exception.CustomException;
 import com.demo.dto.OverallPerformanceDto;
 import com.demo.dto.PeriodPerformanceDto;
@@ -54,7 +54,7 @@ public class MonthlyReportController {
             @RequestParam(name = "yearMonth") String yearMonth) throws Exception {
 
         if (jwtTokenService.needsAuthentication(request)) {
-            throw new CustomException(ErrorDefine.InvalidToken.getDescription(), HttpStatus.UNAUTHORIZED);
+            throw new CustomException(AuthDefine.InvalidToken.getDescription(), HttpStatus.UNAUTHORIZED);
         }
 
         YearMonth ym = YearMonth.parse(yearMonth);

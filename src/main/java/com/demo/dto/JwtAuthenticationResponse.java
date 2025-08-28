@@ -9,7 +9,9 @@ import lombok.*;
 @NoArgsConstructor
 public class JwtAuthenticationResponse {
     private String accessToken;
-    @Builder.Default
+    //@Builder.Default
     private String tokenType = "Bearer";
     private String username;
+    private Integer status = 0;
+    private String message = "";
 }

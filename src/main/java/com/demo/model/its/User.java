@@ -7,6 +7,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
 import java.util.*;
 
 @Entity
@@ -26,7 +27,28 @@ public class User {
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(name = "user_role",
             joinColumns = @JoinColumn(name = "username"),       // tell Hibernate username from user_role references the primary key of users
-            inverseJoinColumns = @JoinColumn(name = "role_id")) // tell Hibernate role_id from user_role references the primary key of roles
+            inverseJoinColumns = @JoinColumn(name = "role_id"))
+    // tell Hibernate role_id from user_role references the primary key of roles
     @JsonIgnore // won't be shown on swagger UI
     private Set<Role> roles = new HashSet<>();
+
+    @JsonIgnore
+    @Column(name = "created_at", nullable = false, insertable = false, updatable = false)
+    private LocalDateTime createdAt;
+
+    @JsonIgnore
+    @Column(name = "updated_at", nullable = false, insertable = false, updatable = false)
+    private LocalDateTime updatedAt;
+
+    @JsonIgnore
+    @Column(name = "pwd_error_times", nullable = false)
+    private int pwdErrorTimes;
+
+    @JsonIgnore
+    @Column(name = "pwd_try_time", nullable = false, insertable = false, updatable = false)
+    private LocalDateTime pwdTryTime;
+
+    @JsonIgnore
+    @Column(name = "changed_at", nullable = false, insertable = false)
+    private LocalDateTime changedAt;
 }

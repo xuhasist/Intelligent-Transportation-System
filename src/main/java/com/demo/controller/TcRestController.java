@@ -1,6 +1,6 @@
 package com.demo.controller;
 
-import com.demo.enums.ErrorDefine;
+import com.demo.enums.AuthDefine;
 import com.demo.exception.CustomException;
 import com.demo.dto.TcMessageLogDto;
 import com.demo.service.JwtTokenService;
@@ -34,7 +34,7 @@ public class TcRestController {
             @RequestParam(defaultValue = "100") int size
     ) throws Exception {
         if (jwtTokenService.needsAuthentication(request)) {
-            throw new CustomException(ErrorDefine.InvalidToken.getDescription(), HttpStatus.UNAUTHORIZED);
+            throw new CustomException(AuthDefine.InvalidToken.getDescription(), HttpStatus.UNAUTHORIZED);
         }
 
         return tcService.getTCMessageLog(startDate, endDate, page, size);
@@ -43,7 +43,7 @@ public class TcRestController {
     @GetMapping("/getTCInfo")
     public ResponseEntity<Object> getTCInfo(HttpServletRequest request) {
         if (jwtTokenService.needsAuthentication(request)) {
-            throw new CustomException(ErrorDefine.InvalidToken.getDescription(), HttpStatus.UNAUTHORIZED);
+            throw new CustomException(AuthDefine.InvalidToken.getDescription(), HttpStatus.UNAUTHORIZED);
         }
 
         return ResponseEntity.ok(tcService.getTCInfo());

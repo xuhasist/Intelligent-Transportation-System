@@ -1,6 +1,6 @@
 package com.demo.controller;
 
-import com.demo.enums.ErrorDefine;
+import com.demo.enums.AuthDefine;
 import com.demo.exception.CustomException;
 import com.demo.service.JwtTokenService;
 import com.demo.service.UserService;
@@ -23,7 +23,7 @@ public class UserController {
     @GetMapping("/getUserInfo")
     public ResponseEntity<Object> getUserInfo(HttpServletRequest request) {
         if (jwtTokenService.needsAuthentication(request)) {
-            throw new CustomException(ErrorDefine.InvalidToken.getDescription(), HttpStatus.UNAUTHORIZED);
+            throw new CustomException(AuthDefine.InvalidToken.getDescription(), HttpStatus.UNAUTHORIZED);
         }
 
         return ResponseEntity.ok(userService.getUserInfo());

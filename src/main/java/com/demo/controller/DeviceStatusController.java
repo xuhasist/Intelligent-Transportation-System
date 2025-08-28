@@ -1,6 +1,6 @@
 package com.demo.controller;
 
-import com.demo.enums.ErrorDefine;
+import com.demo.enums.AuthDefine;
 import com.demo.exception.CustomException;
 import com.demo.service.DeviceStatusService;
 import com.demo.service.JwtTokenService;
@@ -34,7 +34,7 @@ public class DeviceStatusController {
             @RequestParam(defaultValue = "100") int size
     ) throws Exception {
         if (jwtTokenService.needsAuthentication(request)) {
-            throw new CustomException(ErrorDefine.InvalidToken.getDescription(), HttpStatus.UNAUTHORIZED);
+            throw new CustomException(AuthDefine.InvalidToken.getDescription(), HttpStatus.UNAUTHORIZED);
         }
 
         return deviceStatusService.getDeviceStatus(startDate, endDate, page, size);
