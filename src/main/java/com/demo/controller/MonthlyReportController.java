@@ -7,6 +7,7 @@ import com.demo.dto.PeriodPerformanceDto;
 import com.demo.service.JwtTokenService;
 import com.demo.service.MonthlyReportService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -51,7 +52,10 @@ public class MonthlyReportController {
     public void getTotalPerformance(
             HttpServletResponse response,
             HttpServletRequest request,
-            @RequestParam(name = "yearMonth") String yearMonth) throws Exception {
+            @RequestParam(name = "yearMonth")
+            @Parameter(description = "Year and month in format yyyy-MM", example = "2025-06")
+            String yearMonth
+    ) throws Exception {
 
         if (jwtTokenService.needsAuthentication(request)) {
             throw new CustomException(AuthDefine.InvalidToken.getDescription(), HttpStatus.UNAUTHORIZED);

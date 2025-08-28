@@ -4,6 +4,7 @@ import com.demo.enums.AuthDefine;
 import com.demo.exception.CustomException;
 import com.demo.service.DeviceStatusService;
 import com.demo.service.JwtTokenService;
+import io.swagger.v3.oas.annotations.Parameter;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -28,8 +29,15 @@ public class DeviceStatusController {
     @GetMapping
     public Page<Map<String, Object>> getDeviceStatus(
             HttpServletRequest request,
-            @RequestParam String startDate,
-            @RequestParam String endDate,
+
+            @RequestParam
+            @Parameter(description = "Start date in format yyyy-MM-dd", example = "2025-08-28")
+            String startDate,
+
+            @RequestParam
+            @Parameter(description = "End date in format yyyy-MM-dd", example = "2025-08-29")
+            String endDate,
+
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "100") int size
     ) throws Exception {

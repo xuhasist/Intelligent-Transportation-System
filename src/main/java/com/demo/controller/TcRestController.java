@@ -5,6 +5,7 @@ import com.demo.exception.CustomException;
 import com.demo.dto.TcMessageLogDto;
 import com.demo.service.JwtTokenService;
 import com.demo.service.TcService;
+import io.swagger.v3.oas.annotations.Parameter;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -28,8 +29,15 @@ public class TcRestController {
     @GetMapping("/getTCMessageLog")
     public Page<TcMessageLogDto> getTCMessageLog(
             HttpServletRequest request,
-            @RequestParam String startDate,
-            @RequestParam String endDate,
+
+            @RequestParam
+            @Parameter(description = "Start date in format yyyy-MM-dd HH:mm:ss", example = "2025-08-28 14:42:17")
+            String startDate,
+
+            @RequestParam
+            @Parameter(description = "End date in format yyyy-MM-dd HH:mm:ss", example = "2025-08-29 14:42:17")
+            String endDate,
+
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "100") int size
     ) throws Exception {

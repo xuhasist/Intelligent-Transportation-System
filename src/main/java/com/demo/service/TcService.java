@@ -15,11 +15,14 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 
 @Service
 public class TcService {
+    private static final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+
     @Autowired
     private TcMessageLogRepository tcMessageLogRepository;
 
@@ -31,8 +34,8 @@ public class TcService {
 
     public Page<TcMessageLogDto> getTCMessageLog(String startDate, String endDate, int page, int size) throws JsonProcessingException {
         Page<TcMessageLog> pageResult = tcMessageLogRepository.findByLogTimeBetween(
-                objectMapper.readValue("\"" + startDate + "\"", LocalDateTime.class), // convert String to Json and then using global ObjectMapper to parse it
-                objectMapper.readValue("\"" + endDate + "\"", LocalDateTime.class),
+                LocalDateTime.parse(startDate, formatter),
+                LocalDateTime.parse(endDate, formatter),
                 PageRequest.of(page, size)
         );
 
