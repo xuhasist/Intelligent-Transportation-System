@@ -19,8 +19,9 @@ public class UserPasswordHistory {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, length = 100)
-    private String username;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "username", nullable = false)    // default links to primary key of User
+    private User user;
 
     @Column(name = "password_hash", nullable = false, length = 255)
     private String passwordHash;

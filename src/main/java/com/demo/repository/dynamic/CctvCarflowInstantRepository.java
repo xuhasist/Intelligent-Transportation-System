@@ -9,7 +9,7 @@ import org.springframework.stereotype.Repository;
 import java.time.LocalDateTime;
 
 @Repository
-public interface CctvCarflowByPositionRepository extends JpaRepository<CctvCarflowInstant, Long> {
+public interface CctvCarflowInstantRepository extends JpaRepository<CctvCarflowInstant, Long> {
     @Query(value = "SELECT COALESCE(SUM(motor) + SUM(car) + SUM(truck),0) FROM cctv_carflow_instant WHERE cctv_id = :cctv_id and start_time >= (:end_time - INTERVAL :minute MINUTE) AND end_time < :end_time", nativeQuery = true)
     double findCarflowSumByCctvIdAndEndTime(
             @Param("cctv_id") String cctv_id,

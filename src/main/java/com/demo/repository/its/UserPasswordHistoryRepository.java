@@ -8,7 +8,5 @@ import java.util.List;
 
 @Repository
 public interface UserPasswordHistoryRepository extends JpaRepository<UserPasswordHistory, Long> {
-    List<UserPasswordHistory> findTop3ByUsernameOrderByChangedAtDesc(String username);
-
-    List<UserPasswordHistory> findByUsernameOrderByChangedAtDesc(String username);
+    List<UserPasswordHistory> findByUserUsernameOrderByChangedAtDesc(String username);
 }

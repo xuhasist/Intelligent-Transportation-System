@@ -32,6 +32,11 @@ public class User {
     @JsonIgnore // won't be shown on swagger UI
     private Set<Role> roles = new HashSet<>();
 
+    // map to UserPasswordHistory.user
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    @JsonIgnore
+    private List<UserPasswordHistory> passwordHistories;
+
     @JsonIgnore
     @Column(name = "created_at", nullable = false, insertable = false, updatable = false)
     private LocalDateTime createdAt;

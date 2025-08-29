@@ -42,7 +42,7 @@ public class DynamicService {
     private DynamicThresholdRepository dynamicThresholdRepository;
 
     @Autowired
-    private CctvCarflowByPositionRepository CctvCarflowByPositionRepository;
+    private CctvCarflowInstantRepository CctvCarflowInstantRepository;
 
     @Autowired
     private DynamicPlanidRepository dynamicPlanidRepository;
@@ -179,11 +179,11 @@ public class DynamicService {
     }
 
     public double getTotalCarFlow(String cctvId, LocalDateTime endTime, int timeInterval_minute) {
-        return CctvCarflowByPositionRepository.findCarflowSumByCctvIdAndEndTime(cctvId, endTime, timeInterval_minute);
+        return CctvCarflowInstantRepository.findCarflowSumByCctvIdAndEndTime(cctvId, endTime, timeInterval_minute);
     }
 
     public double getSegmentCarFlow(String cctvId, LocalDateTime endTime, int timeInterval_minute, String startPosition, String endPosition) {
-        return CctvCarflowByPositionRepository.findCarflowSumByCctvIdAndEndTimeAndStartPositionAndEndPosition(cctvId, endTime, timeInterval_minute, startPosition, endPosition);
+        return CctvCarflowInstantRepository.findCarflowSumByCctvIdAndEndTimeAndStartPositionAndEndPosition(cctvId, endTime, timeInterval_minute, startPosition, endPosition);
     }
 
     public Boolean isInTrafficPeriod(LocalTime start, LocalTime end) {

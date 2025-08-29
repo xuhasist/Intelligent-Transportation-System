@@ -202,8 +202,7 @@ public class AuthService {
         }
 
         // Retrieve the latest 3 passwords
-        List<UserPasswordHistory> lastPasswords =
-                userPasswordHistoryRepository.findTop3ByUsernameOrderByChangedAtDesc(username);
+        List<UserPasswordHistory> lastPasswords = user.getPasswordHistories();
 
         // Check for duplicates
         String newPasswordHash = passwordEncoder.encode(newPassword);
@@ -223,12 +222,12 @@ public class AuthService {
 
     public void updatePasswordHistory(String username, String password) {
         UserPasswordHistory history = new UserPasswordHistory();
-        history.setUsername(username);
+        history.setUser(getUserOrThrow(username));
         history.setPasswordHash(password);
         userPasswordHistoryRepository.save(history);
 
         // Delete old password records, keeping only the latest 3 entries
-        List<UserPasswordHistory> all = userPasswordHistoryRepository.findByUsernameOrderByChangedAtDesc(username);
+        List<UserPasswordHistory> all = userPasswordHistoryRepository.findByUserUsernameOrderByChangedAtDesc(username);
         if (all.size() > 3) {
             List<UserPasswordHistory> toDelete = all.subList(3, all.size());
             userPasswordHistoryRepository.deleteAll(toDelete);

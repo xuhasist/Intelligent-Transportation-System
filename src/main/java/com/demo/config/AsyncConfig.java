@@ -1,5 +1,6 @@
 package com.demo.config;
 
+import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Configuration;
@@ -21,24 +22,32 @@ public class AsyncConfig implements AsyncConfigurer {
 
     @Override
     public Executor getAsyncExecutor() {
-        executor = new MonitoringThreadPoolTaskExecutor();
+        if(executor == null) {
+            executor = new MonitoringThreadPoolTaskExecutor();
 
-        // get available CPU cores
-        int cpuCores = Runtime.getRuntime().availableProcessors();
+            // get available CPU cores
+            int cpuCores = Runtime.getRuntime().availableProcessors();
 
-        // set core and max pool sizes based on CPU cores
-        int corePoolSize = cpuCores * 2;
-        int maxPoolSize = cpuCores * 6;
-        int queueCapacity = 1000;
+            // set core and max pool sizes based on CPU cores
+            int corePoolSize = cpuCores * 2;
+            int maxPoolSize = cpuCores * 6;
+            int queueCapacity = 1000;
 
-        executor.setCorePoolSize(corePoolSize);
-        executor.setMaxPoolSize(maxPoolSize);
-        executor.setQueueCapacity(queueCapacity);
+            executor.setCorePoolSize(corePoolSize);
+            executor.setMaxPoolSize(maxPoolSize);
+            executor.setQueueCapacity(queueCapacity);
 
-        executor.setThreadNamePrefix("MyAsyncThread-");
-        executor.setRejectedExecutionHandler(new ThreadPoolExecutor.DiscardOldestPolicy());
-        executor.initialize();
+            executor.setThreadNamePrefix("MyAsyncThread-");
+            executor.setRejectedExecutionHandler(new ThreadPoolExecutor.DiscardOldestPolicy());
+            executor.initialize();
+        }
         return executor;
+    }
+
+    @PostConstruct
+    public void init() {
+        // ensure executor is initialized at startup
+        getAsyncExecutor();
     }
 
     public void shutdownExecutor() {
