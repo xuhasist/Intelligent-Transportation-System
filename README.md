@@ -47,30 +47,36 @@ A dynamic traffic signal control system based on real-time vehicle flow, built w
 
 ```
 src
- └── main
-     ├── java/com/demo/
-     │    ├── config            # Spring Boot configurations (Async, DataSource, Security, Swagger, etc.)
-     │    ├── controller        # REST API endpoints (auth, paging, Excel export, etc.)
-     │    ├── dto               # DTOs for requests and responses
-     │    ├── enums             # Application constants
-     │    ├── exception         # Custom exceptions and global exception handling
-     │    ├── itsproject        # Main application entry point
-     │    ├── manager           # Dynamic traffic control logic and message handling
-     │    ├── message           # Definition of traffic control communication messages and protocol processing
-     │    ├── model             # JPA entities
-     │    │    ├── dynamic      # Entities for db_dynamic database
-     │    │    └── its          # Entities for db_its database
-     │    ├── notification      # Discord notification
-     │    ├── repository        # JPA repositories
-     │    │    ├── dynamic      # Repositories for db_dynamic database
-     │    │    └── its          # Repositories for db_its database
-     │    ├── scheduler         # Scheduled tasks (connection, thread pool, and dynamic traffic condition monitoring)
-     │    ├── security          # Security-related classes (UserDetails, etc.) 
-     │    ├── service           # Business logic (MQTT, socket, REST API, data handling, Caffeine caching, etc.)
-     │    └── util              # Utility classes (e.g., LocalDateTime serializer/deserializer)
-     └── resources
-          ├── application.properties        # Environment-specific configurations (excluded)
-          └── application-prod.properties   # Configurations for production environment (excluded) 
+ ├── main
+ │   ├── java/com/demo/
+ │   │    ├── config            # Spring Boot configurations (Async, DataSource, Security, Swagger, etc.)
+ │   │    ├── controller        # REST API endpoints (auth, paging, Excel export, etc.)
+ │   │    ├── dto               # DTOs for requests and responses
+ │   │    ├── enums             # Application constants
+ │   │    ├── exception         # Custom exceptions and global exception handling
+ │   │    ├── itsproject        # Main application entry point
+ │   │    ├── manager           # Dynamic traffic control logic and message handling
+ │   │    ├── mapper            # MapStruct mappers for converting between entities and DTOs
+ │   │    ├── message           # Definition of traffic control communication messages and protocol processing
+ │   │    ├── model             # JPA entities
+ │   │    │    ├── dynamic      # Entities for db_dynamic database
+ │   │    │    └── its          # Entities for db_its database
+ │   │    ├── notification      # Discord notification
+ │   │    ├── repository        # JPA repositories
+ │   │    │    ├── dynamic      # Repositories for db_dynamic database
+ │   │    │    └── its          # Repositories for db_its database
+ │   │    ├── scheduler         # Scheduled tasks (connection, thread pool, and dynamic traffic condition monitoring)
+ │   │    ├── security          # Security-related classes (UserDetails, etc.) 
+ │   │    ├── service           # Business logic (MQTT, socket, REST API, data handling, Caffeine caching, etc.)
+ │   │    └── util              # Utility classes (e.g., LocalDateTime serializer/deserializer)
+ │   └── resources
+ │        ├── application.properties        # Environment-specific configurations (excluded)
+ │        └── application-prod.properties   # Configurations for production environment (excluded)        
+ └── test  
+     └── java/com/demo/
+          ├── controller        # Unit tests for REST controllers
+          ├── itsproject        # Application-level tests startup
+          └── service           # Unit tests for service layer
 ```
 
 ## 🚦 Dynamic Traffic Control Overview
