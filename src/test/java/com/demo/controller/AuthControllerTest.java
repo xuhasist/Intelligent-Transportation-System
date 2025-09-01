@@ -79,9 +79,9 @@ public class AuthControllerTest {
                         .content(objectMapper.writeValueAsString(loginRequest)))
                 .andExpect(MockMvcResultMatchers.status().isOk()) // Expect HTTP 200 OK
                 .andExpect(MockMvcResultMatchers.jsonPath("$.data.username").value(username))
-                .andExpect(MockMvcResultMatchers.jsonPath("$.data.accessToken").value("fake-jwt-token"))
-                .andExpect(MockMvcResultMatchers.jsonPath("$.data.message").value("Authentication Success"))
-                .andExpect(MockMvcResultMatchers.jsonPath("$.data.status").value(200));
+                .andExpect(MockMvcResultMatchers.jsonPath("$.data.accessToken").value(fakeResponse.getAccessToken()))
+                .andExpect(MockMvcResultMatchers.jsonPath("$.data.message").value(fakeResponse.getMessage()))
+                .andExpect(MockMvcResultMatchers.jsonPath("$.data.status").value(fakeResponse.getStatus()));
 
         Mockito.verify(authService, Mockito.times(1))
                 .authenticate(username, password);
@@ -101,7 +101,7 @@ public class AuthControllerTest {
                         .content(objectMapper.writeValueAsString(loginRequest)))
                 .andExpect(MockMvcResultMatchers.status().isUnauthorized())
                 .andExpect(MockMvcResultMatchers.jsonPath("$.message").value("Authentication failed"))
-                .andExpect(MockMvcResultMatchers.jsonPath("$.httpStatus").value("UNAUTHORIZED"));
+                .andExpect(MockMvcResultMatchers.jsonPath("$.httpStatus").value(HttpStatus.UNAUTHORIZED.name()));
 
         Mockito.verify(authService, Mockito.times(1))
                 .authenticate(username, password);
