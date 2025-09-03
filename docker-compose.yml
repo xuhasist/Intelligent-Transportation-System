@@ -1,0 +1,64 @@
+version: '3.9'
+
+services:
+  itsdb:
+    image: mariadb:11
+    networks:
+      - itsnet
+    container_name: itsdb
+    hostname: itsdb
+    environment:
+      MYSQL_ROOT_PASSWORD: test
+      MYSQL_USER: test
+      MYSQL_PASSWORD: test
+    ports:
+      - "3306:3306"
+    volumes:
+      - itsdb_data:/var/lib/mysql
+      - ./mariadb_config/my.cnf:/etc/mysql/my.cnf
+    restart: always     # Always restart the container if it stops or Docker daemon restarts
+
+  itsmqtt:
+    image: eclipse-mosquitto:2.0
+    networks:
+      - itsnet
+    container_name: itsmqtt
+    hostname: itsmqtt
+    ports:
+      - "1883:1883"
+    volumes:
+      - ./mosquitto_config:/mosquitto/config
+      - ./mosquitto_data:/mosquitto/data
+      - ./mosquitto_log:/mosquitto/log
+    restart: always
+
+  itsproject:
+    build:
+      context: .      # Build the Docker image from the current directory
+      dockerfile: Dockerfile
+      args:
+        JAR_FILE: itsproject/itsproject.jar
+    networks:
+      - itsnet
+    container_name: itsproject
+    hostname: itsproject
+    environment:
+      JAR_FILE: "itsproject.jar"
+      JAVA_OPTS: "-server"
+    ports:
+      - "8444:8444"
+    depends_on: # Ensure 'itsdb' and 'itsmqtt' containers start before this one
+      - itsdb
+      - itsmqtt
+    restart: always
+    volumes:
+      - ./itsproject/itsproject.jar:/app/itsproject.jar
+      - ./itsproject:/app
+    #command: sleep infinity   # <-- do not execute jar
+
+volumes:
+  itsdb_data:
+
+networks:
+  itsnet:
+    driver: bridge

@@ -1,0 +1,64 @@
+trigger: none     # No automatic triggers, manual execution only
+
+pool:
+  name: 'Default'   # macOS self-hosted agent pool
+
+variables:
+  JAVA_HOME: /opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home  # macOS Homebrew JDK 21 path
+  ARTIFACT_NAME: springboot-app
+  # set up PROJECT_DIR value in Variable Group
+
+steps:
+  # Install JDK 21 and Maven on macOS
+  - script: |
+      if ! command -v java >/dev/null 2>&1; then
+        echo "=== Java not found, installing... ==="
+        brew install openjdk@21
+      else
+        echo "=== Java is already installed ==="
+      fi
+      export JAVA_HOME=$(JAVA_HOME)
+      export PATH=$JAVA_HOME/bin:$PATH
+      java -version
+      
+      if ! command -v mvn >/dev/null 2>&1; then
+        echo "=== Maven not found, installing... ==="
+        brew install maven
+      else
+        echo "=== Maven is already installed ==="
+      fi
+      mvn -version
+    displayName: 'Ensure Java 21 and Maven are installed'
+
+  - script: |
+      mvn clean test
+    displayName: 'Validate unit testing before building JAR'
+
+  - script: |
+      mvn -B clean package -DskipTests
+    displayName: 'Build Spring Boot application with Maven'
+    # The `-B` option enables batch mode (no interactive prompts)
+
+  - script: |
+      mkdir -p $(Build.ArtifactStagingDirectory)
+      cp target/*.jar $(Build.ArtifactStagingDirectory)/
+    displayName: 'Prepare JAR artifact for publishing'
+
+  - task: PublishBuildArtifacts@1
+    inputs:
+      PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+      ArtifactName: '$(ARTIFACT_NAME)'
+      publishLocation: 'Container'
+    displayName: 'Publish build artifacts'
+
+  # Extract built JAR, then deploy with Docker
+  - script: |
+      echo "=== Copying built JAR to project directory ==="
+      mkdir -p itsproject
+      cp $(Build.ArtifactStagingDirectory)/*.jar $(PROJECT_DIR)/itsproject.jar
+      
+      echo "=== Rebuilding and restarting Docker container ==="
+      docker restart itsproject
+      
+      echo "=== Deployment complete! ==="
+    displayName: 'Deploy built JAR to Docker'
