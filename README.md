@@ -28,19 +28,22 @@ A dynamic traffic signal control system based on real-time vehicle flow, built w
   src/main/resources/application.properties
   ```
 
-### 3. Build the project
-- This project is primarily developed and run using IntelliJ IDEA (Java 21).
-- Import the project as a **Maven** project.
-- Build the project and generate the executable jar file.
-  - Run ```mvn clean package```
-  - The output .jar will be found under:
-    ```
-    ./target/itsproject-0.0.1-SNAPSHOT.jar
-    ```
+### 3. Build and start Docker containers
+- This project is developed with IntelliJ IDEA (Java 21) and deployed in Docker environment.
+- Use Dockerfile and docker-compose.yml to build Docker images and containers:
+  ```
+  docker-compose up --build -d
+  ```
 
-### 4. Run with Docker
-- This project is deployed in a Docker environment.
-- Utilize Dockerfile and docker-compose.yml for building and running the application.
+### 4. Deploy and run the project with Azure CI/CD pipelines
+- Pipeline YAML: azure-pipelines.yml
+- The pipeline will:
+  1. Install JDK 21 and Maven (if not already installed)
+  2. Run unit tests
+  3. Build Spring Boot executable JAR file
+  4. Package the JAR artifact for publishing
+  5. Publish build artifacts to Azure
+  6. Deploy the JAR file in a Docker container
 
 
 ## 📁 Project Structure
