@@ -12,6 +12,7 @@ import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
@@ -29,7 +30,8 @@ public class TcSendMessageManager {
     private static final Logger log = LoggerFactory.getLogger(TcSendMessageManager.class);
     private static final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ssZ");
 
-    private final String topic_tc_publish_prefix = "/v3/demo/device/TC/";
+    @Value("${mqtt.tc.publish.topic.prefix}")
+    private String topic_tc_publish_prefix;
 
     @Autowired
     private TcInfoRepository tcInfoRepository;

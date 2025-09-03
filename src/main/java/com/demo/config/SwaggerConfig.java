@@ -6,6 +6,7 @@ import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.security.SecurityScheme;
 import io.swagger.v3.oas.models.servers.Server;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import io.swagger.v3.oas.models.OpenAPI;
@@ -14,7 +15,9 @@ import java.util.List;
 
 @Configuration
 public class SwaggerConfig {
-    // http://localhost:port/swagger-ui/index.html
+    @Value("${swagger.local.service.url}")
+    private String localServiceUrl;
+
     @Bean
     public OpenAPI apiInfo() {
         return new OpenAPI()
@@ -32,7 +35,7 @@ public class SwaggerConfig {
                                         .bearerFormat("JWT")
                                         .in(SecurityScheme.In.HEADER)))
                 .servers(List.of(
-                        new Server().url("http://localhost:8443").description("Local Server"),
+                        new Server().url(localServiceUrl).description("Local Server"),
                         new Server().url("https://api.demo.com").description("Production server")
                 ));
     }

@@ -47,7 +47,8 @@ public class MqttClientService implements MqttCallback {
     private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
     private int retryDelay = 0;
 
-    private final String topic_tc_subscribe_prefix = "/v3/demo/center/TC/";
+    @Value("${mqtt.tc.subscribe.topic.prefix}")
+    private String topic_tc_subscribe_prefix;
 
     public void connect() {
         try {

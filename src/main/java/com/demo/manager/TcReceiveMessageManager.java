@@ -149,7 +149,7 @@ public class TcReceiveMessageManager {
 
                                         if (message.get(7).equals(0x0f) && message.get(8).equals(0x80)) {
                                             if (message.get(10).equals(0x15)) {
-                                                // 使用 Optional 存儲找到的 Key
+                                                // use Optional to store the found key
                                                 Optional<String> matchingKey = responseQueues.get(socket).keySet().stream()
                                                         .filter(key_ -> key_.startsWith("0f805f14"))
                                                         .findFirst();
