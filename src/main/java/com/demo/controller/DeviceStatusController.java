@@ -5,6 +5,7 @@ import com.demo.exception.CustomException;
 import com.demo.service.DeviceStatusService;
 import com.demo.service.JwtTokenService;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -18,6 +19,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/device-status")
+@Tag(name = "Device Status", description = "Retrieving device status information")
 public class DeviceStatusController {
 
     @Autowired

@@ -6,6 +6,7 @@ import com.demo.exception.CustomException;
 import com.demo.model.its.User;
 import com.demo.service.AuthService;
 import com.demo.service.JwtTokenService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,6 +18,7 @@ import java.net.URI;
 
 @RestController
 @RequestMapping("/api/auth")
+@Tag(name = "Auth", description = "Authentication and User Account Management")
 public class AuthController {
     @Autowired
     private AuthService authService;

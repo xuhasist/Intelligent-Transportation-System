@@ -5,6 +5,7 @@ import com.demo.exception.CustomException;
 import com.demo.model.dynamic.DynamicThreshold;
 import com.demo.service.DynamicService;
 import com.demo.service.JwtTokenService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/dynamic")
+@Tag(name = "Dynamic", description = "Dynamic Control Threshold and Condition Management")
 public class DynamicController {
 
     @Autowired
