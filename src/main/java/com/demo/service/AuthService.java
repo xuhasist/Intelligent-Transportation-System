@@ -52,7 +52,7 @@ public class AuthService {
     private static final int MAX_PWD_ERROR_TIMES = 5;
     private static final int LOCK_PWD_MINUTES = 15;
     private static final int PWD_VALID_DAYS = 90;
-    private static final String STRONG_PASSWORD_REGEX =
+    private static final String STRONG_PWD_REGEX =
             "^(?=.*[^a-zA-Z0-9])(?=.*[A-Z])(?=.*[a-z])(?=.*\\d).{8,}$";
 
     public JwtAuthenticationResponse authenticate(String username, String password) {
@@ -184,7 +184,7 @@ public class AuthService {
 
     public boolean isWeakPassword(String rawPassword) {
         // Password strength validation
-        return !rawPassword.matches(STRONG_PASSWORD_REGEX);
+        return !rawPassword.matches(STRONG_PWD_REGEX);
     }
 
     public void changePassword(ChangePasswordRequest request) {

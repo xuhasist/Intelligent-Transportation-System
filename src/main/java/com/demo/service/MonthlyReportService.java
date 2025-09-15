@@ -18,7 +18,7 @@ import org.springframework.jdbc.core.CallableStatementCallback;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
-import java.io.File;
+import java.nio.file.*;
 import java.sql.CallableStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
@@ -72,17 +72,17 @@ public class MonthlyReportService {
     }
 
     public void exportExcel(List<OverallPerformanceDto> table1, List<PeriodPerformanceDto> table2, String yearMonthId, HttpServletResponse response) throws Exception {
-        String[] headers = {"平假日", "時段", "事前資料平均筆數", "事後資料平均筆數", "路段改善率(%)"};
-        String finalFilePath = "/data/" + yearMonthId + "_performance.xlsx";
-
-        File file = new File(finalFilePath);
-        File parentDir = file.getParentFile();
-        if (parentDir != null && !parentDir.exists()) {
-            boolean created = parentDir.mkdirs();
-            if (!created) {
-                throw new Exception("Create folder failed：" + parentDir.getAbsolutePath());
-            }
+        if (!yearMonthId.matches("\\d{6}")) {
+            throw new IllegalArgumentException("Invalid yearMonthId: " + yearMonthId);
         }
+
+        String[] headers = {"平假日", "時段", "事前資料平均筆數", "事後資料平均筆數", "路段改善率(%)"};
+
+        Path exportDir = Paths.get("/data");
+        Files.createDirectories(exportDir);
+
+        String safeFilename = yearMonthId + "_performance.xlsx";
+        Path finalFilePath = exportDir.resolve(safeFilename);
 
         Workbook workbook = new XSSFWorkbook();
         Sheet sheet = workbook.createSheet("Performance Report");

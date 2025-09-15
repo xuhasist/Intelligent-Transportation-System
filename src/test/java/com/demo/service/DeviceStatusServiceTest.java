@@ -84,7 +84,7 @@ public class DeviceStatusServiceTest {
         Exception exception = Assertions.assertThrows(Exception.class, () ->
                 deviceStatusService.getDeviceStatus(startDate, endDate, 0, 10));
 
-        Assertions.assertEquals("Error querying table dynamic_control_device_status_record_20250828: Table does not exist",
+        Assertions.assertEquals("Error querying device status records.",
                 exception.getMessage());
     }
 }

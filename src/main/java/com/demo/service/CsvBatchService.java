@@ -13,6 +13,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -33,12 +34,22 @@ public class CsvBatchService {
         if (originalFilename == null || originalFilename.isEmpty()) {
             originalFilename = "uploaded_file_" + System.currentTimeMillis() + ".csv";
         }
+        else {
+            // only get the file name
+            originalFilename = Paths.get(originalFilename).getFileName().toString();
+        }
 
-        // define a temp directory for uploads
-        Path tempFilePath = Paths.get("temp_uploads", originalFilename);
-        Files.createDirectories(tempFilePath.getParent());
+        // get file extension
+        if (!originalFilename.contains(".")) {
+            originalFilename = originalFilename + ".csv";
+        }
 
-        // copy file stream to tempFilePath
+        Path uploadDir = Paths.get("temp_uploads");
+        Files.createDirectories(uploadDir);
+
+        // append the safe filename to the upload directory
+        Path tempFilePath = uploadDir.resolve(originalFilename);
+
         try (InputStream is = file.getInputStream()) {
             Files.copy(is, tempFilePath, StandardCopyOption.REPLACE_EXISTING);
         }

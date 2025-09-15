@@ -1,5 +1,7 @@
 package com.demo.service;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.domain.Page;
@@ -14,6 +16,7 @@ import java.util.*;
 
 @Service
 public class DeviceStatusService {
+    private static final Logger log = LoggerFactory.getLogger(DeviceStatusService.class);
     private static final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMdd");
 
     @Autowired
@@ -29,7 +32,7 @@ public class DeviceStatusService {
         int currentCount = 0;
 
         for (LocalDate date : dateRange) {
-            String tableName = "dynamic_control_device_status_record_" + date.format(formatter);
+            String tableName = getSafeTableName(date);
             String sql = "SELECT * FROM " + tableName;
 
             try {
@@ -50,11 +53,23 @@ public class DeviceStatusService {
                     break;
                 }
             } catch (Exception e) {
-                throw new Exception("Error querying table " + tableName + ": " + e.getMessage());
+                log.error("Error querying table {}: {}", tableName, e.getMessage(), e);
+                throw new Exception("Error querying device status records.");
             }
         }
 
         return new PageImpl<>(deviceStatusList, PageRequest.of(page, size), currentCount);
+    }
+
+    private String getSafeTableName(LocalDate date) {
+        String suffix = date.format(formatter);
+
+        // avoid SQL injection by allowing only 8 digits
+        if (!suffix.matches("\\d{8}")) {
+            throw new IllegalArgumentException("Invalid table suffix: " + suffix);
+        }
+
+        return "dynamic_control_device_status_record_" + suffix;
     }
 
     private List<LocalDate> getDateRange(String startDate, String endDate) {

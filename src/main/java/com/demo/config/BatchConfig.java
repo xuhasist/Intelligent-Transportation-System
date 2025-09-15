@@ -169,6 +169,7 @@ public class BatchConfig {
                 .reader(insertReader)
                 .processor(processor())
                 .writer(writer())
+                .allowStartIfComplete(true)
                 .build();
     }
 
