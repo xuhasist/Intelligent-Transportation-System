@@ -76,7 +76,8 @@ Intelligent-Transportation-System
 │    │   │    └── util              # Utility classes (e.g., LocalDateTime serializer/deserializer, Batch Job Listener)
 │    │   └── resources
 │    │        ├── application.properties        # Environment-specific configurations (excluded)
-│    │        └── application-prod.properties   # Configurations for production environment (excluded)        
+│    │        ├── application-test.properties   # Configurations for testing environment (excluded)
+│    │        └── application-prod.properties   # Configurations for production environment (excluded)
 │    └── test  
 │        └── java/com/demo/
 │             ├── controller        # Unit tests for REST controllers
