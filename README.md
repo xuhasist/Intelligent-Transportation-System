@@ -11,6 +11,7 @@ A dynamic traffic signal control system based on real-time vehicle flow, built w
 - MySQL Database Integration via Spring Data JPA
 - API Documentation with Springdoc OpenAPI (Swagger UI)
 - Discord Notification for sending alerts
+- Batch processing for large-scale CSV using Spring Boot Batch
 - Asynchronous multi-threaded processing of TC messages
 
 
@@ -53,8 +54,8 @@ Intelligent-Transportation-System
 ├── src
 │    ├── main
 │    │   ├── java/com/demo/
-│    │   │    ├── config            # Spring Boot configurations (Async, DataSource, Security, Swagger, etc.)
-│    │   │    ├── controller        # REST API endpoints (auth, paging, Excel export, etc.)
+│    │   │    ├── config            # Spring Boot configurations (Async, DataSource, Security, Swagger, Batch, etc.)
+│    │   │    ├── controller        # REST API endpoints (auth, paging, Excel export, CSV upload, etc.)
 │    │   │    ├── dto               # DTOs for requests and responses
 │    │   │    ├── enums             # Application constants
 │    │   │    ├── exception         # Custom exceptions and global exception handling
@@ -72,7 +73,7 @@ Intelligent-Transportation-System
 │    │   │    ├── scheduler         # Scheduled tasks (connection, thread pool, and dynamic traffic condition monitoring)
 │    │   │    ├── security          # Security-related classes (UserDetails, etc.) 
 │    │   │    ├── service           # Business logic (MQTT, socket, REST API, data handling, Caffeine caching, etc.)
-│    │   │    └── util              # Utility classes (e.g., LocalDateTime serializer/deserializer)
+│    │   │    └── util              # Utility classes (e.g., LocalDateTime serializer/deserializer, Batch Job Listener)
 │    │   └── resources
 │    │        ├── application.properties        # Environment-specific configurations (excluded)
 │    │        └── application-prod.properties   # Configurations for production environment (excluded)        
