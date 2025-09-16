@@ -6,7 +6,6 @@ pool:
 variables:
   JAVA_HOME: /opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home  # macOS Homebrew JDK 21 path
   ARTIFACT_NAME: springboot-app
-  # set up PROJECT_DIR value in Variable Group
 
 steps:
   # Install JDK 21 and Maven on macOS
@@ -40,9 +39,12 @@ steps:
     # The `-B` option enables batch mode (no interactive prompts)
 
   - script: |
-      mkdir -p $(Build.ArtifactStagingDirectory)
-      cp target/*.jar $(Build.ArtifactStagingDirectory)/
-    displayName: 'Prepare JAR artifact for publishing'
+      mvn clean verify sonar:sonar \
+        -Dsonar.projectKey=$(SONAR_PROJECT_KEY) \
+        -Dsonar.organization=liuyufan0213 \
+        -Dsonar.host.url=https://sonarcloud.io \
+        -Dsonar.login=$(SONAR_TOKEN)
+    displayName: 'Run SonarCloud analysis with Maven'
 
   - task: PublishBuildArtifacts@1
     inputs:
