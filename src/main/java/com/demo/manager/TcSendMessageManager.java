@@ -400,7 +400,10 @@ public class TcSendMessageManager {
         }, 0, 100, TimeUnit.MILLISECONDS);
 
         // When completableFuture completes，cancel scheduled task
-        futureResult.whenComplete((res, ex) -> scheduledTask.cancel(false));
+        futureResult.whenComplete((res, ex) -> {
+            scheduledTask.cancel(false);
+            scheduler.shutdown();
+        });
 
         return futureResult;
     }

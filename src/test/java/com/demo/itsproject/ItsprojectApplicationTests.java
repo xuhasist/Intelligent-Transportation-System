@@ -1,16 +1,12 @@
 package com.demo.itsproject;
 
-import org.junit.jupiter.api.MethodOrderer;
-import org.junit.jupiter.api.Order;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestMethodOrder;
+import org.junit.jupiter.api.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
 
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class ItsprojectApplicationTests {
@@ -21,6 +17,7 @@ class ItsprojectApplicationTests {
     @Order(1)
     void contextLoads() {
         ZonedDateTime currentTime = ZonedDateTime.now();
+        Assertions.assertNotNull(currentTime, "Current time should not be null");
         String notify = "Test started successfully at " + currentTime.format(formatter);
         log.info(notify);
     }

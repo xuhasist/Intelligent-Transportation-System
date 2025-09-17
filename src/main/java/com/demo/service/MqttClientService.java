@@ -72,7 +72,7 @@ public class MqttClientService implements MqttCallback {
 
                 log.info("MQTT connection success !");
 
-                this.subscribeTCDevice();
+                this.subscribeAllTc();
             }
 
         } catch (MqttException e) {
@@ -98,7 +98,7 @@ public class MqttClientService implements MqttCallback {
         return false;
     }
 
-    public void subscribeTCDevice() {
+    public void subscribeAllTc() {
         try {
             List<TcInfo> tcls = tcInfoRepository.findByEnable((byte) 1);
             if (tcls == null || tcls.isEmpty()) {
@@ -110,11 +110,36 @@ public class MqttClientService implements MqttCallback {
                     .map(tc -> topic_tc_subscribe_prefix + tc.getTcId())
                     .toList();
 
-            int[] qos = IntStream.generate(() -> 1).limit(tcls.size()).toArray();
+            int[] qos = IntStream.generate(() -> 1).limit(topics.size()).toArray();
 
             this.subscribe(topics.toArray(String[]::new), qos);
         } catch (Exception e) {
+            log.error("Failed to subscribe to all TC devices", e);
+        }
+    }
+
+    public void subscribeTc(List<TcInfo> tcls) {
+        try {
+            List<String> topics = tcls.stream()
+                    .map(tc -> topic_tc_subscribe_prefix + tc.getTcId())
+                    .toList();
+
+            int[] qos = IntStream.generate(() -> 1).limit(topics.size()).toArray();
+            this.subscribe(topics.toArray(String[]::new), qos);
+        } catch (Exception e) {
             log.error("Failed to subscribe to TC devices", e);
+        }
+    }
+
+    public void unsubscribeTc(List<TcInfo> tcls) {
+        try {
+            List<String> topics = tcls.stream()
+                    .map(tc -> topic_tc_subscribe_prefix + tc.getTcId())
+                    .toList();
+
+            this.unsubscribe(topics.toArray(String[]::new));
+        } catch (Exception e) {
+            log.error("Failed to unsubscribe to TC devices", e);
         }
     }
 
@@ -128,6 +153,19 @@ public class MqttClientService implements MqttCallback {
             log.info("Subscribed to topics: {}", String.join(", ", topic));
         } catch (Exception e) {
             log.error("Mqtt subscribe Exception ", e);
+        }
+    }
+
+    public void unsubscribe(String[] topic) {
+        if (topic == null || topic.length == 0) {
+            return;
+        }
+
+        try {
+            mqttClient.unsubscribe(topic);
+            log.info("Unsubscribed to topics: {}", String.join(", ", topic));
+        } catch (Exception e) {
+            log.error("Mqtt unsubscribe Exception ", e);
         }
     }
 
@@ -163,7 +201,7 @@ public class MqttClientService implements MqttCallback {
                 if (this.isMqttConnected()) {
                     retryDelay = 0;
                     log.info("Reconnected successfully.");
-                    this.subscribeTCDevice();
+                    this.subscribeAllTc();
                 } else {
                     retryDelay++;
                     // for next time mqtt connectionLost is triggered

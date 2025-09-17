@@ -7,6 +7,7 @@ import com.demo.repository.its.TcInfoRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -15,6 +16,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+
 
 @Service
 public class SocketService {
@@ -32,6 +34,10 @@ public class SocketService {
     @Autowired
     private DiscordNotifier discordNotifier;
 
+    @Autowired
+    @Lazy
+    private MqttClientService mqttClientService;
+
     public void socketConnect() {
         List<TcInfo> tcDevices = tcInfoRepository.findByEnable((byte) 1);
         for (TcInfo tc : tcDevices) {
@@ -40,18 +46,20 @@ public class SocketService {
     }
 
     private void singleSocketConnect(String ip, int port) {
+        Socket socket = null;
+        boolean success = false;
         int connectionTimeout = 3000;   // 3 seconds
 
         try {
             InetSocketAddress socketAddress = new InetSocketAddress(ip, port);
-            Socket socket = new Socket();
+            socket = new Socket();
             socket.setReuseAddress(true);
             socket.connect(socketAddress, connectionTimeout);
 
+            success = true;
             socketMap.put(ip, socket);
 
             log.info("Connected to TC: {}", ip);
-
             tcReceiveMessageManager.run(socket);
 
             Thread.sleep(100);  // wait a bit for connecting next tc
@@ -65,6 +73,14 @@ public class SocketService {
             log.error("I/O error occurred when connecting to {}:{}", ip, port, e);
         } catch (Exception e) {
             log.error("Unexpected exception while connecting to {}:{}", ip, port, e);
+        } finally {
+            if (!success && socket != null) {
+                // close socket when connection failed
+                try {
+                    socket.close();
+                } catch (IOException ignored) {
+                }
+            }
         }
     }
 
@@ -114,20 +130,26 @@ public class SocketService {
 
     public void checkAllConnections() {
         List<TcInfo> allTC = tcInfoRepository.findAll();
+        List<TcInfo> subscribeTcLs = new ArrayList<>();
+        List<TcInfo> unsubscribeTcLs = new ArrayList<>();
+
         for (TcInfo tc : allTC) {
             String ip = tc.getIp();
 
-            if (!isHostConnected(ip)) {     // disconnected
+            if (!isHostConnected(ip)) {      // disconnected
                 if (tc.getEnable() == 1) {   // Reconnect
                     singleSocketConnect(tc.getIp(), tc.getPort());
-                    // resubscribe mqtt topic
+                    subscribeTcLs.add(tc);
                 }
             } else {                          // connected
-                if (tc.getEnable() == 0) {   // close connection
+                if (tc.getEnable() == 0) {    // close connection
                     closeConnection(ip);
-                    // unsubscribe mqtt topic
+                    unsubscribeTcLs.add(tc);
                 }
             }
         }
+
+        mqttClientService.subscribeTc(subscribeTcLs);
+        mqttClientService.unsubscribeTc(unsubscribeTcLs);
     }
 }
