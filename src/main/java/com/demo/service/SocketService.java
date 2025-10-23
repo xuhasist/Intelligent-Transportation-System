@@ -85,10 +85,21 @@ public class SocketService {
     }
 
     public Socket getConnection(String ip) {
+        if(ip == null || ip.isEmpty()) {
+            return null;
+        }
         return socketMap.get(ip);
     }
 
     public void removeConnection(String ip) {
+        Socket socket = getConnection(ip);
+        if(socket != null) {
+            try {
+                socket.close();
+            } catch (IOException e) {
+                log.warn("Error closing socket {}", ip, e);
+            }
+        }
         socketMap.remove(ip);
 
         String notify = "Connection removed for TC IP: " + ip + " at " + LocalDateTime.now().format(formatter);
