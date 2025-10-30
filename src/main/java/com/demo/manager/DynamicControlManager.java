@@ -461,7 +461,7 @@ public class DynamicControlManager {
         Thread.sleep(100);
     }
 
-    private boolean compareInt(String name, int expected, int actual, StringBuilder errorLog) {
+    boolean compareInt(String name, int expected, int actual, StringBuilder errorLog) {
         if (expected != actual) {
             errorLog.append(String.format("%s mismatch: expected=%d, actual=%d%n", name, expected, actual));
             return false;
@@ -469,7 +469,7 @@ public class DynamicControlManager {
         return true;
     }
 
-    private boolean compareString(String name, String expected, String actual, StringBuilder errorLog) {
+    boolean compareString(String name, String expected, String actual, StringBuilder errorLog) {
         if (!expected.equalsIgnoreCase(actual)) {
             errorLog.append(String.format("%s mismatch: expected=%s, actual=%s%n", name, expected, actual));
             return false;
@@ -477,7 +477,7 @@ public class DynamicControlManager {
         return true;
     }
 
-    private boolean compareList(List<Integer> expected, JSONArray actualArray, String name, StringBuilder
+    boolean compareList(List<Integer> expected, JSONArray actualArray, String name, StringBuilder
             errorLog) {
         List<Integer> actual = jsonArrayToList(actualArray);
         if (!expected.equals(actual)) {

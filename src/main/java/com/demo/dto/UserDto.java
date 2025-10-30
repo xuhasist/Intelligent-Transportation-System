@@ -1,10 +1,7 @@
 package com.demo.dto;
 
 import com.demo.model.its.Role;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
 import java.util.Set;
 
@@ -12,6 +9,7 @@ import java.util.Set;
 @Setter
 @Getter
 @AllArgsConstructor
+@NoArgsConstructor
 public class UserDto {
     private String username;
     private Set<Role> roles;

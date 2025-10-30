@@ -43,7 +43,8 @@ steps:
         -Dsonar.projectKey=$(SONAR_PROJECT_KEY) \
         -Dsonar.organization=liuyufan0213 \
         -Dsonar.host.url=https://sonarcloud.io \
-        -Dsonar.login=$(SONAR_TOKEN)
+        -Dsonar.login=$(SONAR_TOKEN) \
+        -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
     displayName: 'Run SonarCloud analysis with Maven'
 
   - task: PublishBuildArtifacts@1

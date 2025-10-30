@@ -2,6 +2,7 @@ package com.demo.model.its;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -18,9 +19,11 @@ import java.util.*;
 @NoArgsConstructor
 public class User {
     @Id
+    @NotBlank(message = "Username is required")
     @Column(name = "username", nullable = false, length = 100)
     private String username;
 
+    @NotBlank(message = "Password is required")
     @Column(name = "password", nullable = false, length = 255)
     private String password;
 

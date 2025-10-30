@@ -23,6 +23,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
 
 import java.net.URI;
 
@@ -53,6 +54,7 @@ public class AuthControllerTest {
         mockMvc = MockMvcBuilders
                 .standaloneSetup(authController)
                 .setControllerAdvice(new GlobalExceptionHandler()) // Add global exception handler
+                .setValidator(new LocalValidatorFactoryBean()) // register Validator
                 .build();
     }
 
@@ -216,6 +218,16 @@ public class AuthControllerTest {
                 .andExpect(MockMvcResultMatchers.jsonPath("$.message").value("Password not strong"));
 
         Mockito.verify(authService, Mockito.times(1)).changePassword(Mockito.any(ChangePasswordRequest.class));
+    }
+
+    @Test
+    void testAuthenticateUser_InvalidInput() throws Exception {
+        User loginRequest = new User(); // username and password are null
+
+        mockMvc.perform(MockMvcRequestBuilders.post("/api/auth/signin")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(loginRequest)))
+                .andExpect(MockMvcResultMatchers.status().isBadRequest());
     }
 }
 

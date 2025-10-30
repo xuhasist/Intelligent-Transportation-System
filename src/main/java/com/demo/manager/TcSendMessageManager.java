@@ -291,7 +291,7 @@ public class TcSendMessageManager {
         }
     }
 
-    private boolean retrySendWithResponse(Socket socket, List<Integer> msg, String deviceId, String command, String successKey, String failKey) throws IOException, InterruptedException {
+    boolean retrySendWithResponse(Socket socket, List<Integer> msg, String deviceId, String command, String successKey, String failKey) throws IOException, InterruptedException {
         BufferedOutputStream out = new java.io.BufferedOutputStream(socket.getOutputStream());
         String seq = String.format("%03x", msg.get(2));
         String nakKey = "aaee".substring(0, 4) + seq;   // nak key is aaee
@@ -341,7 +341,7 @@ public class TcSendMessageManager {
         // save log end
     }
 
-    private boolean handleResponse(List<Integer> response, String command, String deviceId, Socket socket, String successKey) {
+    boolean handleResponse(List<Integer> response, String command, String deviceId, Socket socket, String successKey) {
         if (response.get(0) == 0xAA && response.get(1) == 0xEE) {     // NAK
             String msg = "TC respond NAK: " + NakDefine.getDescriptionByValue(response.get(7));
             return false;
@@ -369,7 +369,7 @@ public class TcSendMessageManager {
         return true;
     }
 
-    private CompletableFuture<List<Integer>> waitForSpecificResponse(Socket socket, int timeoutMillis, String successKey, String failKey, String nakKey) throws InterruptedException {
+    CompletableFuture<List<Integer>> waitForSpecificResponse(Socket socket, int timeoutMillis, String successKey, String failKey, String nakKey) throws InterruptedException {
         CompletableFuture<List<Integer>> futureResult = new CompletableFuture<>();
         String[] keys = {successKey, failKey, nakKey};
 
@@ -408,7 +408,7 @@ public class TcSendMessageManager {
         return futureResult;
     }
 
-    private List<Integer> genMsg(String host, String command, MessageObject msgobj) {
+    List<Integer> genMsg(String host, String command, MessageObject msgobj) {
         String addr = String.valueOf(tcInfoRepository.findByIp(host).getAddr());
         return messageService.generateMessage(addr, command, msgobj);
     }

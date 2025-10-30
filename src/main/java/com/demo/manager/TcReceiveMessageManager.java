@@ -7,6 +7,7 @@ import com.demo.repository.its.TcInfoRepository;
 import com.demo.service.MessageService;
 import com.demo.service.SocketService;
 import lombok.Getter;
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -53,7 +54,7 @@ public class TcReceiveMessageManager {
     public void run(Socket socket) {
         log.info("TCReceiveMessageManager started for socket: {}", socket.getInetAddress().getHostAddress());
 
-        String ip = socket.getInetAddress().toString().substring(1);
+        String ip = socket.getInetAddress().getHostAddress();
         String deviceId = tcInfoRepository.findByIp(ip).getTcId();
 
         List<Integer> message = new ArrayList<>();      // hexadecimal
@@ -195,7 +196,7 @@ public class TcReceiveMessageManager {
         return sb.toString();
     }
 
-    private void saveToQueue(Socket socket, String key, List<Integer> copyOfMessage) {
+    void saveToQueue(Socket socket, String key, List<Integer> copyOfMessage) {
         responseQueues
                 .computeIfAbsent(socket, s -> new ConcurrentHashMap<>())
                 .put(key, copyOfMessage);
@@ -253,7 +254,7 @@ public class TcReceiveMessageManager {
         }
     }
 
-    private void combine5FC45FC5Messages(Socket socket, String key, List<Integer> copyOfMessage) {
+    void combine5FC45FC5Messages(Socket socket, String key, List<Integer> copyOfMessage) {
         Map<String, List<Integer>> socketMessageMap = responseQueues.get(socket);
         String planIdStr = key.substring(4, 6);
 
@@ -289,7 +290,7 @@ public class TcReceiveMessageManager {
         }
     }
 
-    private void handle5FC4Message(String deviceId, List<Integer> message5fc4, List<String> msgstr5fc4) {
+    void handle5FC4Message(String deviceId, List<Integer> message5fc4, List<String> msgstr5fc4) {
         try {
             int planId = message5fc4.get(9);
             int subPhaseCount = message5fc4.get(10);
@@ -314,12 +315,12 @@ public class TcReceiveMessageManager {
             JSONObject value = new JSONObject();
             value.put("planId", planId);
             value.put("subPhaseCount", subPhaseCount);
-            value.put("minGreen", minGreen);
-            value.put("maxGreen", maxGreen);
-            value.put("yellow", yellow);
-            value.put("allRed", allRed);
-            value.put("pedGreenFlash", pedGreenFlash);
-            value.put("pedRed", pedRed);
+            value.put("minGreen", new JSONArray(minGreen));
+            value.put("maxGreen", new JSONArray(maxGreen));
+            value.put("yellow", new JSONArray(yellow));
+            value.put("allRed", new JSONArray(allRed));
+            value.put("pedGreenFlash", new JSONArray(pedGreenFlash));
+            value.put("pedRed", new JSONArray(pedRed));
 
             valueMap5FC4.put(deviceId, value);
 
@@ -328,7 +329,7 @@ public class TcReceiveMessageManager {
         }
     }
 
-    private void handle5FC5Message(String deviceId, List<Integer> message5fc5, List<String> msgstr5fc5) {
+    void handle5FC5Message(String deviceId, List<Integer> message5fc5, List<String> msgstr5fc5) {
         try {
             int planId = message5fc5.get(9);
             int direct = message5fc5.get(10);
@@ -349,7 +350,7 @@ public class TcReceiveMessageManager {
             value.put("direct", direct);
             value.put("phaseOrder", String.format("%02x", phaseOrder));
             value.put("subPhaseCount", subPhaseCount);
-            value.put("green", green);
+            value.put("green", new JSONArray(green));
             value.put("cycleTime", cycleTime);
             value.put("offset", offset);
 

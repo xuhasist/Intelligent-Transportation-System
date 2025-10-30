@@ -2,11 +2,13 @@ package com.demo.model.dynamic;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
+import lombok.Builder;
 import lombok.Data;
 
 import java.io.Serializable;
 
 @Data   // includes getter、setter、toString、equals、hashCode
+@Builder
 @Embeddable
 public class DynamicParametersId implements Serializable {
 

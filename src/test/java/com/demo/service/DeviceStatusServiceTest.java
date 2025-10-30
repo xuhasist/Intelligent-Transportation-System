@@ -10,6 +10,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.jdbc.core.JdbcTemplate;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 
@@ -86,5 +87,43 @@ public class DeviceStatusServiceTest {
 
         Assertions.assertEquals("Error querying device status records.",
                 exception.getMessage());
+    }
+
+    @Test
+    void testGetSafeTableName_invalidDate_throwsException() {
+        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+            java.lang.reflect.Method method = DeviceStatusService.class
+                    .getDeclaredMethod("getSafeTableName", LocalDate.class);
+            method.setAccessible(true); // make the private method accessible
+            method.invoke(deviceStatusService, null);
+        });
+    }
+
+    @Test
+    void testGetDateRange_multipleDays() throws Exception {
+        java.lang.reflect.Method method = DeviceStatusService.class
+                .getDeclaredMethod("getDateRange", String.class, String.class);
+        method.setAccessible(true);
+        List<LocalDate> dates = (List<LocalDate>) method.invoke(deviceStatusService, "2025-08-28", "2025-08-30");
+
+        Assertions.assertEquals(3, dates.size());
+        Assertions.assertEquals(LocalDate.parse("2025-08-28"), dates.get(0));
+        Assertions.assertEquals(LocalDate.parse("2025-08-29"), dates.get(1));
+        Assertions.assertEquals(LocalDate.parse("2025-08-30"), dates.get(2));
+    }
+
+    @Test
+    void testGetDeviceStatus_emptyResults() throws Exception {
+        String startDate = "2025-08-28";
+        String endDate = "2025-08-28";
+
+        String sql = "SELECT * FROM dynamic_control_device_status_record_20250828";
+        // return empty list
+        Mockito.when(statusJdbcTemplate.queryForList(sql)).thenReturn(List.of());
+
+        Page<Map<String, Object>> pageResult = deviceStatusService.getDeviceStatus(startDate, endDate, 0, 10);
+
+        Assertions.assertTrue(pageResult.getContent().isEmpty());
+        Mockito.verify(statusJdbcTemplate, Mockito.times(1)).queryForList(sql);
     }
 }

@@ -2,11 +2,15 @@ package com.demo.model.dynamic;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 
 import java.io.Serializable;
 
 @Data   // includes getter、setter、toString、equals、hashCode
+@Builder(toBuilder = true)
+@AllArgsConstructor
 @Embeddable
 public class DynamicThresholdId implements Serializable {
 

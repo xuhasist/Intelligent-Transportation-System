@@ -45,14 +45,14 @@ public class SocketService {
         }
     }
 
-    private void singleSocketConnect(String ip, int port) {
+    void singleSocketConnect(String ip, int port) {
         Socket socket = null;
         boolean success = false;
         int connectionTimeout = 3000;   // 3 seconds
 
         try {
             InetSocketAddress socketAddress = new InetSocketAddress(ip, port);
-            socket = new Socket();
+            socket = createSocket();
             socket.setReuseAddress(true);
             socket.connect(socketAddress, connectionTimeout);
 
@@ -82,6 +82,11 @@ public class SocketService {
                 }
             }
         }
+    }
+
+    // for mocking in unit test
+    Socket createSocket() {
+        return new Socket();
     }
 
     public Socket getConnection(String ip) {
