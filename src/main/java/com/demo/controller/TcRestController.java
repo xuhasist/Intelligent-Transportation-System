@@ -28,7 +28,7 @@ public class TcRestController {
     @Autowired
     private JwtTokenService jwtTokenService;
 
-    @GetMapping("/getTCMessageLog")
+    @GetMapping("/v1/tc/message-logs")
     public Page<TcMessageLogDto> getTCMessageLog(
             HttpServletRequest request,
 
@@ -50,7 +50,7 @@ public class TcRestController {
         return tcService.getTCMessageLog(startDate, endDate, page, size);
     }
 
-    @GetMapping("/getTCInfo")
+    @GetMapping("/v1/tc/info")
     public ResponseEntity<Object> getTCInfo(HttpServletRequest request) {
         if (jwtTokenService.needsAuthentication(request)) {
             throw new CustomException(AuthDefine.InvalidToken.getDescription(), HttpStatus.UNAUTHORIZED);

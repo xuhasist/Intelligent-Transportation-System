@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.*;
 
 
 @RestController
-@RequestMapping("/api/user")
+@RequestMapping("/api")
 @Tag(name = "User", description = "User Information")
 public class UserController {
     @Autowired
@@ -22,7 +22,7 @@ public class UserController {
     @Autowired
     private UserService userService;
 
-    @GetMapping("/getUserInfo")
+    @GetMapping("/v1/users")
     public ResponseEntity<Object> getUserInfo(HttpServletRequest request) {
         if (jwtTokenService.needsAuthentication(request)) {
             throw new CustomException(AuthDefine.InvalidToken.getDescription(), HttpStatus.UNAUTHORIZED);

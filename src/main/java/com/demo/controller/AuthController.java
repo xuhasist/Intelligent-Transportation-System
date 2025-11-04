@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.*;
 import java.net.URI;
 
 @RestController
-@RequestMapping("/api/auth")
+@RequestMapping("/api")
 @Tag(name = "Auth", description = "Authentication and User Account Management")
 public class AuthController {
     @Autowired
@@ -26,7 +26,7 @@ public class AuthController {
     @Autowired
     private JwtTokenService jwtTokenService;
 
-    @PostMapping("/signin")
+    @PostMapping("/v1/auth/users")
     public ResponseEntity<Object> authenticateUser(@Valid @RequestBody User loginRequest) {
         JwtAuthenticationResponse response = authService.authenticate(loginRequest.getUsername(), loginRequest.getPassword());
         SystemLogResponse<JwtAuthenticationResponse> retVal = new SystemLogResponse<>();
@@ -35,13 +35,13 @@ public class AuthController {
         return ResponseEntity.ok(retVal);
     }
 
-    @PostMapping("/signup")
+    @PostMapping("/v1/auth/sessions")
     public ResponseEntity<Object> registerUser(@Valid @RequestBody SignupRequest signUpRequest) {
         URI location = authService.register(signUpRequest);
         return ResponseEntity.created(location).body(new ApiResponse(true, "signup successful"));
     }
 
-    @PostMapping("/changePassword")
+    @PostMapping("/v1/auth/users/password")
     public ResponseEntity<Object> changePassword(HttpServletRequest request,
                                                  @Valid @RequestBody ChangePasswordRequest changePwdRequest) {
         if (jwtTokenService.needsAuthentication(request, true)) {

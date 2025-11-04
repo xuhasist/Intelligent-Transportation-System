@@ -25,7 +25,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 @RestController
-@RequestMapping("/api/monthlyReport")
+@RequestMapping("/api")
 @Tag(name = "Monthly Report", description = "Generating monthly reports")
 public class MonthlyReportController {
     private static final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
@@ -50,7 +50,7 @@ public class MonthlyReportController {
     }
 
     @Operation(summary = "分時路段總績效", security = @SecurityRequirement(name = "Bearer Authentication"))
-    @GetMapping("/getTotalPerformance")
+    @GetMapping("/v1/reports/monthly/performance")
     public void getTotalPerformance(
             HttpServletResponse response,
             HttpServletRequest request,

@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 @RestController
-@RequestMapping("/api/csv")
+@RequestMapping("/api")
 @Tag(name = "Csv", description = "CSV File Upload and Processing")
 public class CsvController {
     @Autowired
@@ -26,7 +26,7 @@ public class CsvController {
     @Autowired
     private JwtTokenService jwtTokenService;
 
-    @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping(value = "/v1/csv/files", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Object> uploadCsv(
             @RequestParam(name = "files") MultipartFile file, HttpServletRequest request) throws Exception {
         if (jwtTokenService.needsAuthentication(request)) {

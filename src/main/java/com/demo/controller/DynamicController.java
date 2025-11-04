@@ -13,7 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/dynamic")
+@RequestMapping("/api")
 @Tag(name = "Dynamic", description = "Dynamic Control Threshold and Condition Management")
 public class DynamicController {
 
@@ -23,7 +23,7 @@ public class DynamicController {
     @Autowired
     private JwtTokenService jwtTokenService;
 
-    @GetMapping("/getAllDynamicThreshold")
+    @GetMapping("/v1/dynamic-thresholds")
     public ResponseEntity<Object> getAllDynamicThreshold(HttpServletRequest request) {
         if (jwtTokenService.needsAuthentication(request)) {
             throw new CustomException(AuthDefine.InvalidToken.getDescription(), HttpStatus.UNAUTHORIZED);
@@ -32,7 +32,7 @@ public class DynamicController {
         return ResponseEntity.ok(dynamicService.getAllDynamicThresholds());
     }
 
-    @PutMapping("/updateDynamicThreshold")
+    @PutMapping("/v1/dynamic-thresholds")
     public ResponseEntity<Object> updateDynamicThreshold(
             HttpServletRequest request,
             @RequestBody DynamicThreshold updateData) {

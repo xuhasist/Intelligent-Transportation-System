@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/device-status")
+@RequestMapping("/api")
 @Tag(name = "Device Status", description = "Retrieving device status information")
 public class DeviceStatusController {
 
@@ -28,7 +28,7 @@ public class DeviceStatusController {
     @Autowired
     private JwtTokenService jwtTokenService;
 
-    @GetMapping
+    @GetMapping("/v1/devices/status")
     public Page<Map<String, Object>> getDeviceStatus(
             HttpServletRequest request,
 
